@@ -50,3 +50,14 @@ func ExampleWith_typedError() {
 
 	// Output: Handled ValidationError: invalid input, field1: value1, field2: value2
 }
+
+func ExampleField_typedKey() {
+	// Demonstrate using a custom named string type as a key.
+	type Key string
+	const UserID Key = "user_id"
+
+	err := With(New("invalid input"), Field(UserID, "123"))
+	fmt.Println(err)
+
+	// Output: invalid input, user_id: 123
+}

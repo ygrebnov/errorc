@@ -13,33 +13,42 @@
 // The [With] function allows wrapping a sentinel error with additional context
 // and later identifying this error using [errors.Is].
 //
-//	ErrInvalidInput := New("invalid input")
-//	err := With(ErrInvalidInput, Field("field1", "value1"), Field("field2", "value2"))
-//	...
-//	if errors.Is(err, ErrInvalidInput) {
-//	    // Handle the error
-//	}
+//		ErrInvalidInput := New("invalid input")
+//		err := With(ErrInvalidInput, Field("field1", "value1"), Field("field2", "value2"))
+//		...
+//		if errors.Is(err, ErrInvalidInput) {
+//	   // Handle the error
+//		}
 //
 // Also, the [With] function allows wrapping a typed error with additional context
 // and later identifying this error using [errors.As].
 //
-//	type ValidationError struct {
-//	    Message string
-//	}
+//		type ValidationError struct {
+//	   Message string
+//		}
 //
-//	func (e *ValidationError) Error() string {
-//	    return e.Message
-//	}
+//		func (e *ValidationError) Error() string {
+//	   return e.Message
+//		}
 //
-//	err := With(&ValidationError{"invalid input"}, Field("field1", "value1"), Field("field2", "value2"))
-//	...
-//	var ve *ValidationError
-//	if errors.As(err, &ve) {
-//	    // Handle the typed error
-//	}
+//		err := With(&ValidationError{"invalid input"}, Field("field1", "value1"), Field("field2", "value2"))
+//		...
+//		var ve *ValidationError
+//		if errors.As(err, &ve) {
+//	   // Handle the typed error
+//		}
 //
 // Wrapped error [Error] method returns the original error message and non-empty fields
 // in "key: value" format if key is non-empty or as "value" if key is empty.
 //
-// The [Field] function is an adaptor for creating error context fields with a key and a value.
+// The generic [Field] function (Field[K ~string]) lets you use any named string type
+// as the key without an explicit cast. For example:
+//
+//	type Key string
+//	const UserID Key = "user_id"
+//	err := With(New("invalid input"), Field(UserID, "123"))
+//
+// Produces:
+//
+//	invalid input, user_id: 123
 package errorc

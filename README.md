@@ -89,6 +89,59 @@ func main() {
 }
 ```
 
+### Custom key types (generic Field)
+`Field` is generic: `func Field[K ~string](key K, value string)`. This lets you define strongly typed keys without manual casting:
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/ygrebnov/errorc"
+)
+
+type Key string
+
+const (
+	UserID Key = "user_id"
+	TraceID Key = "trace_id"
+)
+
+func main() {
+	err := errorc.With(
+		errorc.New("invalid input"),
+		errorc.Field(UserID, "123"),
+		errorc.Field(TraceID, "abc-xyz"),
+	)
+	fmt.Println(err)
+	// Output: invalid input, user_id: 123, trace_id: abc-xyz
+}
+```
+
+You can still pass plain string keys; type inference picks `K = string` automatically:
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/ygrebnov/errorc"
+)
+
+func main() {
+	err := errorc.With(errorc.New("oops"), errorc.Field("detail", "something"))
+	fmt.Println(err)
+}
+```
+
+### Field formatting rules
+Given a base error `E` and fields F1..Fn:
+- Empty key & non-empty value -> appended as `value`
+- Non-empty key & any value -> appended as `key: value`
+- Empty key & empty value -> omitted (no bytes appended)
+
+The final error string is: `E.Error(), <field1>, <field2>, ...` (comma+space separated) for each non-nil field.
+
 ## Installation
 
 Compatible with Go 1.22 or later:
@@ -96,6 +149,9 @@ Compatible with Go 1.22 or later:
 ```shell
 go get github.com/ygrebnov/errorc
 ```
+
+## Versioning
+This library is pre-1.0; minor version bumps (e.g. 0.2.0) may include breaking changes. Once it reaches 1.0, semantic versioning will apply more strictly.
 
 ## Contributing
 

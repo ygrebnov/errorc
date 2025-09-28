@@ -70,11 +70,14 @@ func (e *errorWithFields) Unwrap() error {
 type field func() stringField
 
 // Field creates a new field with the given key and value.
-// Both key and value are strings.
-func Field(key, value string) field {
+// The key can be any type whose underlying type is string (constraint ~string),
+// allowing custom named string types to be used without an explicit conversion.
+func Field[K ~string](key K, value string) field {
+	// Convert once here so the closure doesn't need to repeatedly convert.
+	ks := string(key)
 	return func() stringField {
 		return stringField{
-			key:   key,
+			key:   ks,
 			value: value,
 		}
 	}
