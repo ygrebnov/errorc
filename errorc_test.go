@@ -100,3 +100,13 @@ func TestError(t *testing.T) {
 		"Error with empty message and nil field should return empty string",
 	)
 }
+
+func TestFieldGenericKey(t *testing.T) {
+	type keyType string
+
+	const userID keyType = "user_id"
+	const emptyKey keyType = ""
+
+	err := With(New("base"), Field(userID, "42"), Field(emptyKey, "just-value"))
+	require.Equal(t, "base, user_id: 42, just-value", err.Error())
+}
