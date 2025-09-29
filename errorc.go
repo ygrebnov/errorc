@@ -68,7 +68,7 @@ func (e *errorWithFields) Unwrap() error {
 	return e.e
 }
 
-type field func() fieldAdapter
+type field func() kv
 
 // String creates a new field with the given key and value.
 // The key can be any type whose underlying type is string (constraint ~string),
@@ -76,8 +76,8 @@ type field func() fieldAdapter
 func String[K ~string](key K, value string) field {
 	// Convert once here so the closure doesn't need to repeatedly convert.
 	ks := string(key)
-	return func() fieldAdapter {
-		return fieldAdapter{
+	return func() kv {
+		return kv{
 			key:   ks,
 			value: value,
 		}
@@ -89,8 +89,8 @@ func String[K ~string](key K, value string) field {
 func Int[K ~string](key K, value int) field {
 	ks := string(key)
 	vs := strconv.Itoa(value)
-	return func() fieldAdapter {
-		return fieldAdapter{key: ks, value: vs}
+	return func() kv {
+		return kv{key: ks, value: vs}
 	}
 }
 
@@ -99,8 +99,8 @@ func Int[K ~string](key K, value int) field {
 func Bool[K ~string](key K, value bool) field {
 	ks := string(key)
 	vs := strconv.FormatBool(value)
-	return func() fieldAdapter {
-		return fieldAdapter{key: ks, value: vs}
+	return func() kv {
+		return kv{key: ks, value: vs}
 	}
 }
 
@@ -113,20 +113,20 @@ func Error[K ~string](key K, err error) field {
 	}
 	ks := string(key)
 	msg := err.Error() // capture now; avoids calling Error repeatedly if closure evaluated multiple times
-	return func() fieldAdapter {
-		return fieldAdapter{
+	return func() kv {
+		return kv{
 			key:   ks,
 			value: msg,
 		}
 	}
 }
 
-// fieldAdapter contains a key-value pair for additional context in an error.
-type fieldAdapter struct {
+// kv contains a key-value pair for additional context in an error.
+type kv struct {
 	value, key string
 }
 
-func (s *fieldAdapter) getBytes() []byte {
+func (s *kv) getBytes() []byte {
 	switch {
 	case s.key == "" && s.value == "":
 		return nil

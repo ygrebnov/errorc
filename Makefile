@@ -10,4 +10,7 @@ test:
 bench:
 	@go test -bench=.
 
-.PHONY: test bench
+fuzz:
+	@go test -fuzz=Fuzz -fuzztime=10s ./...
+
+.PHONY: test bench fuzz
