@@ -13,42 +13,56 @@
 // The [With] function allows wrapping a sentinel error with additional context
 // and later identifying this error using [errors.Is].
 //
-//		ErrInvalidInput := New("invalid input")
-//		err := With(ErrInvalidInput, Field("field1", "value1"), Field("field2", "value2"))
-//		...
-//		if errors.Is(err, ErrInvalidInput) {
-//	   // Handle the error
-//		}
+//			ErrInvalidInput := New("invalid input")
+//			err := With(ErrInvalidInput, String("field1", "value1"), String("field2", "value2"))
+//			...
+//			if errors.Is(err, ErrInvalidInput) {
+//	  // Handle the error
+//			}
 //
 // Also, the [With] function allows wrapping a typed error with additional context
 // and later identifying this error using [errors.As].
 //
-//		type ValidationError struct {
-//	   Message string
-//		}
+//			type ValidationError struct {
+//	  Message string
+//			}
 //
-//		func (e *ValidationError) Error() string {
-//	   return e.Message
-//		}
+//			func (e *ValidationError) Error() string {
+//	  return e.Message
+//			}
 //
-//		err := With(&ValidationError{"invalid input"}, Field("field1", "value1"), Field("field2", "value2"))
-//		...
-//		var ve *ValidationError
-//		if errors.As(err, &ve) {
-//	   // Handle the typed error
-//		}
+//			err := With(&ValidationError{"invalid input"}, String("field1", "value1"), String("field2", "value2"))
+//			...
+//			var ve *ValidationError
+//			if errors.As(err, &ve) {
+//	  // Handle the typed error
+//			}
 //
 // Wrapped error [Error] method returns the original error message and non-empty fields
 // in "key: value" format if key is non-empty or as "value" if key is empty.
 //
-// The generic [Field] function (Field[K ~string]) lets you use any named string type
+// The generic [String] function (String[K ~string]) lets you use any named string type
 // as the key without an explicit cast. For example:
 //
 //	type Key string
 //	const UserID Key = "user_id"
-//	err := With(New("invalid input"), Field(UserID, "123"))
+//	err := With(New("invalid input"), String(UserID, "123"))
 //
 // Produces:
 //
 //	invalid input, user_id: 123
+//
+// The [Error] helper turns an error into a field. A nil error is ignored.
+// If the provided key is empty only the wrapped error's message is appended.
+//
+//	cause := errors.New("disk full")
+//	err := With(New("operation failed"), Error("cause", cause))
+//	// operation failed, cause: disk full
+//
+// The [Int] and [Bool] helpers provide zero-allocation conversions for
+// integers and booleans (conversion done once at creation). They follow the same
+// formatting rules as String: empty key prints only the value.
+//
+//	err := With(New("query failed"), Int("retries", 3), Bool("cached", false))
+//	// query failed, retries: 3, cached: false
 package errorc

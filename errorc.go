@@ -2,6 +2,7 @@ package errorc
 
 import (
 	"errors"
+	"strconv"
 	"unsafe"
 )
 
@@ -67,28 +68,65 @@ func (e *errorWithFields) Unwrap() error {
 	return e.e
 }
 
-type field func() stringField
+type field func() kv
 
-// Field creates a new field with the given key and value.
+// String creates a new field with the given key and value.
 // The key can be any type whose underlying type is string (constraint ~string),
 // allowing custom named string types to be used without an explicit conversion.
-func Field[K ~string](key K, value string) field {
+func String[K ~string](key K, value string) field {
 	// Convert once here so the closure doesn't need to repeatedly convert.
 	ks := string(key)
-	return func() stringField {
-		return stringField{
+	return func() kv {
+		return kv{
 			key:   ks,
 			value: value,
 		}
 	}
 }
 
-// stringField contains a key-value pair for additional context in an error.
-type stringField struct {
+// Int creates a field whose value is the decimal representation of an int.
+// The conversion happens at creation time to avoid repeated work when the closure is invoked.
+func Int[K ~string](key K, value int) field {
+	ks := string(key)
+	vs := strconv.Itoa(value)
+	return func() kv {
+		return kv{key: ks, value: vs}
+	}
+}
+
+// Bool creates a field whose value is the string representation of a bool ("true" / "false").
+// The conversion happens at creation time to avoid repeated work when the closure is invoked.
+func Bool[K ~string](key K, value bool) field {
+	ks := string(key)
+	vs := strconv.FormatBool(value)
+	return func() kv {
+		return kv{key: ks, value: vs}
+	}
+}
+
+// Error creates a field from an error value. If err is nil it returns nil so that
+// it will be ignored by With(). The error's message is captured at field creation time.
+// This mirrors String's formatting rules: if key is empty only the value is printed.
+func Error[K ~string](key K, err error) field {
+	if err == nil {
+		return nil
+	}
+	ks := string(key)
+	msg := err.Error() // capture now; avoids calling Error repeatedly if closure evaluated multiple times
+	return func() kv {
+		return kv{
+			key:   ks,
+			value: msg,
+		}
+	}
+}
+
+// kv contains a key-value pair for additional context in an error.
+type kv struct {
 	value, key string
 }
 
-func (s *stringField) getBytes() []byte {
+func (s *kv) getBytes() []byte {
 	switch {
 	case s.key == "" && s.value == "":
 		return nil
