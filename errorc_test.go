@@ -108,3 +108,37 @@ func TestFieldGenericKey(t *testing.T) {
 		)
 	}
 }
+
+// TestErrorField validates behavior of ErrorField helper.
+func TestErrorField(t *testing.T) {
+	inner := errors.New("inner failure")
+	wrapped := With(New("base"), ErrorField("cause", inner))
+	if wrapped.Error() != "base, cause: inner failure" {
+		t.Fatalf("expected 'base, cause: inner failure', got %q", wrapped.Error())
+	}
+
+	// Empty key means only value printed.
+	noKey := With(New("base"), ErrorField("", inner))
+	if noKey.Error() != "base, inner failure" {
+		t.Fatalf("expected 'base, inner failure', got %q", noKey.Error())
+	}
+
+	// Nil error is skipped (returns original error without extra comma spacing changes beyond existing fields).
+	withNil := With(New("base"), ErrorField("cause", nil), Field("k", "v"))
+	if withNil.Error() != "base, k: v" {
+		t.Fatalf("expected 'base, k: v', got %q", withNil.Error())
+	}
+
+	// Generic key type.
+	type keyType string
+	generic := With(New("base"), ErrorField(keyType("cause"), inner))
+	if generic.Error() != "base, cause: inner failure" {
+		t.Fatalf("expected 'base, cause: inner failure', got %q", generic.Error())
+	}
+
+	// Empty message base error.
+	emptyBase := With(New(""), ErrorField("cause", inner))
+	if emptyBase.Error() != ", cause: inner failure" {
+		t.Fatalf("expected ', cause: inner failure', got %q", emptyBase.Error())
+	}
+}

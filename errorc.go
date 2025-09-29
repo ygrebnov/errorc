@@ -83,6 +83,23 @@ func Field[K ~string](key K, value string) field {
 	}
 }
 
+// ErrorField creates a field from an error value. If err is nil it returns nil so that
+// it will be ignored by With(). The error's message is captured at field creation time.
+// This mirrors Field's formatting rules: if key is empty only the value is printed.
+func ErrorField[K ~string](key K, err error) field {
+	if err == nil {
+		return nil
+	}
+	ks := string(key)
+	msg := err.Error() // capture now; avoids calling Error repeatedly if closure evaluated multiple times
+	return func() stringField {
+		return stringField{
+			key:   ks,
+			value: msg,
+		}
+	}
+}
+
 // stringField contains a key-value pair for additional context in an error.
 type stringField struct {
 	value, key string

@@ -19,33 +19,20 @@ BenchmarkFmtErrorf-8     7401583               186.7 ns/op
 The `With` function allows wrapping a sentinel error with additional context and later identifying this error using `errors.Is`.
 
 ```go
-package main
+// Create a new named error.
+ErrInvalidInput := errorc.New("invalid input")
 
-import (
-	"errors"
-	"fmt"
-	
-	"github.com/ygrebnov/errorc"
+// Wrap the named error with additional context.
+err := errorc.With(
+    ErrInvalidInput,
+    errorc.Field("field1", "value1"),
+    errorc.Field("field2", "value2"),
 )
 
-func main() {
-	// Create a new named error.
-	ErrInvalidInput := errorc.New("invalid input")
-
-	// Wrap the named error with additional context.
-	err := errorc.With(
-		ErrInvalidInput,
-		errorc.Field("field1", "value1"),
-		errorc.Field("field2", "value2"),
-	)
-
-	// Identify the error using errors.Is.
-	if errors.Is(err, ErrInvalidInput) {
-		// Handle the invalid input error.
-		fmt.Print("Handled invalid input error: ", err.Error())
-	}
-
-	// Output: Handled invalid input error: invalid input, field1: value1, field2: value2
+// Identify the error using errors.Is.
+if errors.Is(err, ErrInvalidInput) {
+    // Handle the invalid input error.
+    fmt.Print("Handled invalid input error: ", err.Error())
 }
 ```
 
@@ -53,39 +40,19 @@ func main() {
 The `With` function allows wrapping a typed error with additional context and later identifying this error using `errors.As`.
 
 ```go
-package main
+type ValidationError struct { Message string }
+func (e *ValidationError) Error() string { return e.Message }
 
-import (
-	"errors"
-	"fmt"
-	
-	"github.com/ygrebnov/errorc"
+err := errorc.With(
+    &ValidationError{"invalid input"},
+    errorc.Field("field1", "value1"),
+    errorc.Field("field2", "value2"),
 )
 
-type ValidationError struct {
-	Message string
-}
-
-func (e *ValidationError) Error() string {
-	return e.Message
-}
-
-func main() {
-	// Create a new error of type ValidationError.
-	err := errorc.With(
-		&ValidationError{"invalid input"},
-		errorc.Field("field1", "value1"),
-		errorc.Field("field2", "value2"),
-	)
-
-	// Identify ValidationError using errors.As.
-	var ve *ValidationError
-	if errors.As(err, &ve) {
-		// Handle ValidationError.
-		fmt.Print("Handled ValidationError: ", err.Error())
-	}
-
-	// Output: Handled ValidationError: invalid input, field1: value1, field2: value2
+// Identify ValidationError using errors.As.
+var ve *ValidationError
+if errors.As(err, &ve) {
+    fmt.Print("Handled ValidationError: ", err.Error())
 }
 ```
 
@@ -93,45 +60,42 @@ func main() {
 `Field` is generic: `func Field[K ~string](key K, value string)`. This lets you define strongly typed keys without manual casting:
 
 ```go
-package main
-
-import (
-	"fmt"
-	"github.com/ygrebnov/errorc"
-)
-
 type Key string
-
 const (
-	UserID Key = "user_id"
-	TraceID Key = "trace_id"
+    UserID  Key = "user_id"
+    TraceID Key = "trace_id"
 )
 
-func main() {
-	err := errorc.With(
-		errorc.New("invalid input"),
-		errorc.Field(UserID, "123"),
-		errorc.Field(TraceID, "abc-xyz"),
-	)
-	fmt.Println(err)
-	// Output: invalid input, user_id: 123, trace_id: abc-xyz
-}
+err := errorc.With(
+    errorc.New("invalid input"),
+    errorc.Field(UserID, "123"),
+    errorc.Field(TraceID, "abc-xyz"),
+)
+fmt.Println(err) // invalid input, user_id: 123, trace_id: abc-xyz
 ```
 
 You can still pass plain string keys; type inference picks `K = string` automatically:
 
 ```go
-package main
+err := errorc.With(errorc.New("oops"), errorc.Field("detail", "something"))
+fmt.Println(err)
+```
 
-import (
-	"fmt"
-	"github.com/ygrebnov/errorc"
-)
+### ErrorField (embedding an underlying cause's message)
+Use `ErrorField` to capture another error's message as a structured field. Nil errors are ignored.
 
-func main() {
-	err := errorc.With(errorc.New("oops"), errorc.Field("detail", "something"))
-	fmt.Println(err)
-}
+```go
+cause := errors.New("disk full")
+err := errorc.With(errorc.New("operation failed"), errorc.ErrorField("cause", cause))
+fmt.Println(err) // operation failed, cause: disk full
+
+// Empty key prints only the inner error's message
+err2 := errorc.With(errorc.New("operation failed"), errorc.ErrorField("", cause))
+fmt.Println(err2) // operation failed, disk full
+
+// Nil cause is skipped
+err3 := errorc.With(errorc.New("operation failed"), errorc.ErrorField("cause", nil))
+fmt.Println(err3) // operation failed
 ```
 
 ### Field formatting rules

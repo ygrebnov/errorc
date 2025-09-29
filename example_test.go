@@ -61,3 +61,14 @@ func ExampleField_typedKey() {
 
 	// Output: invalid input, user_id: 123
 }
+
+// ExampleErrorField demonstrates adding an underlying error message as a field.
+func ExampleErrorField() {
+	base := New("operation failed")
+	cause := errors.New("disk full")
+
+	err := With(base, ErrorField("cause", cause))
+	fmt.Println(err)
+
+	// Output: operation failed, cause: disk full
+}
