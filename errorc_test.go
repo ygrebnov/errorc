@@ -3,8 +3,6 @@ package errorc
 import (
 	"errors"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 type typedError struct {
@@ -17,38 +15,33 @@ func (e *typedError) Error() string {
 
 func TestNominal(t *testing.T) {
 	testError := New("test error")
-	require.Equal(
-		t,
-		"test error",
-		testError.Error(),
-		"Error message should match",
-	)
+	if testError.Error() != "test error" {
+		t.Errorf("Expected error message to be 'test error', got '%s'", testError.Error())
+	}
 
 	wrapped := With(testError)
-	require.True(
-		t,
-		errors.Is(wrapped, testError),
-		"Unwrapped error should match the original error",
-	)
+	if !errors.Is(wrapped, testError) {
+		t.Errorf("Expected unwrapped error to match the original error")
+	}
 
 	wrappedTyped := With(&typedError{"typed error"})
 	var unwrappedTyped *typedError
 
 	ok := errors.As(wrappedTyped, &unwrappedTyped)
-	require.True(
-		t,
-		ok,
-		"Unwrapped error should be of type typedError",
-	)
+	if !ok {
+		t.Errorf("Expected unwrapped error to be of type typedError")
+	}
 
-	require.Equal(
-		t,
-		"typed error",
-		unwrappedTyped.Error(),
-		"Unwrapped error message should match the original error message",
-	)
+	if unwrappedTyped.Error() != "typed error" {
+		t.Errorf(
+			"Expected unwrapped error message to be 'typed error', got '%s'",
+			unwrappedTyped.Error(),
+		)
+	}
 
-	require.Nil(t, With(nil), "Wrapping nil should return nil")
+	if With(nil) != nil {
+		t.Errorf("Expected With(nil) to return nil")
+	}
 }
 
 func TestError(t *testing.T) {
@@ -57,48 +50,48 @@ func TestError(t *testing.T) {
 		Field("", "message"),
 		Field("key2", "value2"),
 	)
-	require.Equal(
-		t,
-		"test error, message, key2: value2",
-		withFields.Error(),
-		"Test error message should match the expected string",
-	)
+	if withFields.Error() != "test error, message, key2: value2" {
+		t.Errorf(
+			"Expected error message to be 'test error, message, key2: value2', got '%s'",
+			withFields.Error(),
+		)
+	}
 
 	withFieldsTyped := With(
 		With(&typedError{"typed error"}),
 		Field("key1", "value1"),
 		Field("key2", "value2"),
 	)
-	require.Equal(
-		t,
-		"typed error, key1: value1, key2: value2",
-		withFieldsTyped.Error(),
-		"Typed error message should match the expected string",
-	)
+	if withFieldsTyped.Error() != "typed error, key1: value1, key2: value2" {
+		t.Errorf(
+			"Expected error message to be 'typed error, key1: value1, key2: value2', got '%s'",
+			withFieldsTyped.Error(),
+		)
+	}
 
 	emptyMessageWithField := With(New(""), Field("key1", "value1"))
-	require.Equal(
-		t,
-		", key1: value1",
-		emptyMessageWithField.Error(),
-		"Error with empty message should still include fields",
-	)
+	if emptyMessageWithField.Error() != ", key1: value1" {
+		t.Errorf(
+			"Expected error message to be ', key1: value1', got '%s'",
+			emptyMessageWithField.Error(),
+		)
+	}
 
 	emptyMessageWithEmptyField := With(New(""), Field("", ""))
-	require.Equal(
-		t,
-		", ",
-		emptyMessageWithEmptyField.Error(),
-		"Error with empty message and empty fields should return just a comma and space",
-	)
+	if emptyMessageWithEmptyField.Error() != ", " {
+		t.Errorf(
+			"Expected error message to be ', ', got '%s'",
+			emptyMessageWithEmptyField.Error(),
+		)
+	}
 
 	emptyMessageWithNilField := With(New(""), nil)
-	require.Equal(
-		t,
-		"",
-		emptyMessageWithNilField.Error(),
-		"Error with empty message and nil field should return empty string",
-	)
+	if emptyMessageWithNilField.Error() != "" {
+		t.Errorf(
+			"Expected error message to be '', got '%s'",
+			emptyMessageWithNilField.Error(),
+		)
+	}
 }
 
 func TestFieldGenericKey(t *testing.T) {
@@ -108,5 +101,10 @@ func TestFieldGenericKey(t *testing.T) {
 	const emptyKey keyType = ""
 
 	err := With(New("base"), Field(userID, "42"), Field(emptyKey, "just-value"))
-	require.Equal(t, "base, user_id: 42, just-value", err.Error())
+	if err.Error() != "base, user_id: 42, just-value" {
+		t.Errorf(
+			"Expected error message to be 'base, user_id: 42, just-value', got '%s'",
+			err.Error(),
+		)
+	}
 }
