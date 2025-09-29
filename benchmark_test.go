@@ -8,8 +8,8 @@ import (
 
 func BenchmarkWith(b *testing.B) {
 	baseErr := New("benchmark error")
-	field1 := Field("key1", "value1")
-	field2 := Field("key2", "value2")
+	field1 := String("key1", "value1")
+	field2 := String("key2", "value2")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

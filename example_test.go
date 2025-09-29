@@ -12,8 +12,8 @@ func ExampleWith_sentinelError() {
 	// Wrap the sentinel error with additional context.
 	err := With(
 		ErrInvalidInput,
-		Field("field1", "value1"),
-		Field("field2", "value2"),
+		String("field1", "value1"),
+		String("field2", "value2"),
 	)
 
 	// Identify the error using errors.Is.
@@ -37,8 +37,8 @@ func ExampleWith_typedError() {
 	// Create a new error of type ValidationError.
 	err := With(
 		&ValidationError{"invalid input"},
-		Field("field1", "value1"),
-		Field("field2", "value2"),
+		String("field1", "value1"),
+		String("field2", "value2"),
 	)
 
 	// Identify ValidationError using errors.As.
@@ -51,38 +51,38 @@ func ExampleWith_typedError() {
 	// Output: Handled ValidationError: invalid input, field1: value1, field2: value2
 }
 
-func ExampleField_typedKey() {
+func ExampleString_typedKey() {
 	// Demonstrate using a custom named string type as a key.
 	type Key string
 	const UserID Key = "user_id"
 
-	err := With(New("invalid input"), Field(UserID, "123"))
+	err := With(New("invalid input"), String(UserID, "123"))
 	fmt.Println(err)
 
 	// Output: invalid input, user_id: 123
 }
 
-// ExampleErrorField demonstrates adding an underlying error message as a field.
-func ExampleErrorField() {
+// ExampleError demonstrates adding an underlying error message as a field.
+func ExampleError() {
 	base := New("operation failed")
 	cause := errors.New("disk full")
 
-	err := With(base, ErrorField("cause", cause))
+	err := With(base, Error("cause", cause))
 	fmt.Println(err)
 
 	// Output: operation failed, cause: disk full
 }
 
-// ExampleIntField demonstrates adding an integer value as a field.
-func ExampleIntField() {
-	err := With(New("query failed"), IntField("retries", 3))
+// ExampleInt demonstrates adding an integer value as a field.
+func ExampleInt() {
+	err := With(New("query failed"), Int("retries", 3))
 	fmt.Println(err)
 	// Output: query failed, retries: 3
 }
 
-// ExampleBoolField demonstrates adding a boolean value as a field.
-func ExampleBoolField() {
-	err := With(New("query failed"), BoolField("cached", false))
+// ExampleBool demonstrates adding a boolean value as a field.
+func ExampleBool() {
+	err := With(New("query failed"), Bool("cached", false))
 	fmt.Println(err)
 	// Output: query failed, cached: false
 }

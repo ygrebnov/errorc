@@ -25,8 +25,8 @@ ErrInvalidInput := errorc.New("invalid input")
 // Wrap the named error with additional context.
 err := errorc.With(
     ErrInvalidInput,
-    errorc.Field("field1", "value1"),
-    errorc.Field("field2", "value2"),
+    errorc.String("field1", "value1"),
+    errorc.String("field2", "value2"),
 )
 
 // Identify the error using errors.Is.
@@ -45,8 +45,8 @@ func (e *ValidationError) Error() string { return e.Message }
 
 err := errorc.With(
     &ValidationError{"invalid input"},
-    errorc.Field("field1", "value1"),
-    errorc.Field("field2", "value2"),
+    errorc.String("field1", "value1"),
+    errorc.String("field2", "value2"),
 )
 
 // Identify ValidationError using errors.As.
@@ -56,8 +56,8 @@ if errors.As(err, &ve) {
 }
 ```
 
-### Custom key types (generic Field)
-`Field` is generic: `func Field[K ~string](key K, value string)`. This lets you define strongly typed keys without manual casting:
+### Custom key types (generic String)
+`String` is generic: `func String[K ~string](key K, value string)`. This lets you define strongly typed keys without manual casting:
 
 ```go
 type Key string
@@ -68,8 +68,8 @@ const (
 
 err := errorc.With(
     errorc.New("invalid input"),
-    errorc.Field(UserID, "123"),
-    errorc.Field(TraceID, "abc-xyz"),
+    errorc.String(UserID, "123"),
+    errorc.String(TraceID, "abc-xyz"),
 )
 fmt.Println(err) // invalid input, user_id: 123, trace_id: abc-xyz
 ```
@@ -77,40 +77,40 @@ fmt.Println(err) // invalid input, user_id: 123, trace_id: abc-xyz
 You can still pass plain string keys; type inference picks `K = string` automatically:
 
 ```go
-err := errorc.With(errorc.New("oops"), errorc.Field("detail", "something"))
+err := errorc.With(errorc.New("oops"), errorc.String("detail", "something"))
 fmt.Println(err)
 ```
 
-### ErrorField (embedding an underlying cause's message)
-Use `ErrorField` to capture another error's message as a structured field. Nil errors are ignored.
+### Error (embedding an underlying cause's message)
+Use `Error` to capture another error's message as a structured field. Nil errors are ignored.
 
 ```go
 cause := errors.New("disk full")
-err := errorc.With(errorc.New("operation failed"), errorc.ErrorField("cause", cause))
+err := errorc.With(errorc.New("operation failed"), errorc.Error("cause", cause))
 fmt.Println(err) // operation failed, cause: disk full
 
 // Empty key prints only the inner error's message
-err2 := errorc.With(errorc.New("operation failed"), errorc.ErrorField("", cause))
+err2 := errorc.With(errorc.New("operation failed"), errorc.Error("", cause))
 fmt.Println(err2) // operation failed, disk full
 
 // Nil cause is skipped
-err3 := errorc.With(errorc.New("operation failed"), errorc.ErrorField("cause", nil))
+err3 := errorc.With(errorc.New("operation failed"), errorc.Error("cause", nil))
 fmt.Println(err3) // operation failed
 ```
 
-### IntField and BoolField
+### Int and Bool
 Helpers for common primitive types. These convert the value once when the field is created (no repeated formatting) and follow the same formatting rules (empty key prints only the value):
 
 ```go
 err := errorc.With(
     errorc.New("query failed"),
-    errorc.IntField("retries", 3),
-    errorc.BoolField("cached", false),
+    errorc.Int("retries", 3),
+    errorc.Bool("cached", false),
 )
 fmt.Println(err) // query failed, retries: 3, cached: false
 
 // Empty keys -> just values
-err2 := errorc.With(errorc.New("status"), errorc.IntField("", 10), errorc.BoolField("", true))
+err2 := errorc.With(errorc.New("status"), errorc.Int("", 10), errorc.Bool("", true))
 fmt.Println(err2) // status, 10, true
 ```
 
