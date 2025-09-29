@@ -142,3 +142,45 @@ func TestErrorField(t *testing.T) {
 		t.Fatalf("expected ', cause: inner failure', got %q", emptyBase.Error())
 	}
 }
+
+func TestIntField(t *testing.T) {
+	err := With(New("base"), IntField("count", 5))
+	exp := "base, count: 5"
+	if err.Error() != exp {
+		t.Fatalf("expected %q, got %q", exp, err.Error())
+	}
+
+	err2 := With(New("base"), IntField("", -42))
+	exp2 := "base, -42"
+	if err2.Error() != exp2 {
+		t.Fatalf("expected %q, got %q", exp2, err2.Error())
+	}
+
+	// Empty key + empty message: ensure formatting still comma-separated.
+	empty := With(New(""), IntField("", 0))
+	exp3 := ", 0"
+	if empty.Error() != exp3 {
+		t.Fatalf("expected %q, got %q", exp3, empty.Error())
+	}
+}
+
+func TestBoolField(t *testing.T) {
+	err := With(New("base"), BoolField("ok", true))
+	exp := "base, ok: true"
+	if err.Error() != exp {
+		t.Fatalf("expected %q, got %q", exp, err.Error())
+	}
+
+	err2 := With(New("base"), BoolField("", false))
+	exp2 := "base, false"
+	if err2.Error() != exp2 {
+		t.Fatalf("expected %q, got %q", exp2, err2.Error())
+	}
+
+	// Empty key + empty message: ensure formatting still comma-separated.
+	empty := With(New(""), BoolField("flag", false))
+	exp3 := ", flag: false"
+	if empty.Error() != exp3 {
+		t.Fatalf("expected %q, got %q", exp3, empty.Error())
+	}
+}

@@ -72,3 +72,17 @@ func ExampleErrorField() {
 
 	// Output: operation failed, cause: disk full
 }
+
+// ExampleIntField demonstrates adding an integer value as a field.
+func ExampleIntField() {
+	err := With(New("query failed"), IntField("retries", 3))
+	fmt.Println(err)
+	// Output: query failed, retries: 3
+}
+
+// ExampleBoolField demonstrates adding a boolean value as a field.
+func ExampleBoolField() {
+	err := With(New("query failed"), BoolField("cached", false))
+	fmt.Println(err)
+	// Output: query failed, cached: false
+}

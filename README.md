@@ -98,6 +98,22 @@ err3 := errorc.With(errorc.New("operation failed"), errorc.ErrorField("cause", n
 fmt.Println(err3) // operation failed
 ```
 
+### IntField and BoolField
+Helpers for common primitive types. These convert the value once when the field is created (no repeated formatting) and follow the same formatting rules (empty key prints only the value):
+
+```go
+err := errorc.With(
+    errorc.New("query failed"),
+    errorc.IntField("retries", 3),
+    errorc.BoolField("cached", false),
+)
+fmt.Println(err) // query failed, retries: 3, cached: false
+
+// Empty keys -> just values
+err2 := errorc.With(errorc.New("status"), errorc.IntField("", 10), errorc.BoolField("", true))
+fmt.Println(err2) // status, 10, true
+```
+
 ### Field formatting rules
 Given a base error `E` and fields F1..Fn:
 - Empty key & non-empty value -> appended as `value`

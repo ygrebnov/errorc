@@ -58,4 +58,11 @@
 //	cause := errors.New("disk full")
 //	err := With(New("operation failed"), ErrorField("cause", cause))
 //	// operation failed, cause: disk full
+//
+// The [IntField] and [BoolField] helpers provide zero-allocation conversions for
+// integers and booleans (conversion done once at creation). They follow the same
+// formatting rules as Field: empty key prints only the value.
+//
+//	err := With(New("query failed"), IntField("retries", 3), BoolField("cached", false))
+//	// query failed, retries: 3, cached: false
 package errorc

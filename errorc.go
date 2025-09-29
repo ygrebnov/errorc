@@ -2,6 +2,7 @@ package errorc
 
 import (
 	"errors"
+	"strconv"
 	"unsafe"
 )
 
@@ -80,6 +81,26 @@ func Field[K ~string](key K, value string) field {
 			key:   ks,
 			value: value,
 		}
+	}
+}
+
+// IntField creates a field whose value is the decimal representation of an int.
+// The conversion happens at creation time to avoid repeated work when the closure is invoked.
+func IntField[K ~string](key K, value int) field {
+	ks := string(key)
+	vs := strconv.Itoa(value)
+	return func() stringField {
+		return stringField{key: ks, value: vs}
+	}
+}
+
+// BoolField creates a field whose value is the string representation of a bool ("true" / "false").
+// The conversion happens at creation time to avoid repeated work when the closure is invoked.
+func BoolField[K ~string](key K, value bool) field {
+	ks := string(key)
+	vs := strconv.FormatBool(value)
+	return func() stringField {
+		return stringField{key: ks, value: vs}
 	}
 }
 
