@@ -168,21 +168,21 @@ You can construct simple, namespaced error identifiers using `New` together with
 ```go
 // Using New and WithNamespace
 err := errorc.New("read_failed", errorc.WithNamespace("storage"))
-fmt.Println(err) // storage.read_failed
+fmt.Println(err) // storage: read_failed
 
 // Using a Namespace method
 storage := errorc.Namespace("storage")
 err2 := storage.NewError("read_failed")
-fmt.Println(err2) // storage.read_failed
+fmt.Println(err2) // storage: read_failed
 
 // Using ErrorFactory
 storageErr := errorc.ErrorFactory("storage")
 err3 := storageErr("read_failed")
-fmt.Println(err3) // storage.read_failed
+fmt.Println(err3) // storage: read_failed
 ```
 
 These use the same `Namespace`/`WithNamespace` options as `NewKey`/`KeyFactory`
-to form identifiers like `namespace.segment.name`.
+to form identifiers like `namespace.segment: message` for errors and `namespace.segment.name` for keys.
 
 ## Installation
 

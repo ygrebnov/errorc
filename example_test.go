@@ -119,7 +119,7 @@ func ExampleNew_withNamespace() {
 	// Build a namespaced error using New and WithNamespace.
 	err := New("read_failed", WithNamespace("storage"))
 	fmt.Println(err)
-	// Output: storage.read_failed
+	// Output: storage: read_failed
 }
 
 func ExampleErrorFactory() {
@@ -128,5 +128,5 @@ func ExampleErrorFactory() {
 
 	err := storageErr("read_failed")
 	fmt.Println(err)
-	// Output: storage.read_failed
+	// Output: storage: read_failed
 }

@@ -41,8 +41,8 @@ func WithNamespace(ns Namespace) Option {
 // New creates a new error from the given message and options.
 //
 // Options can prepend a namespace or other components to form identifiers like
-// "storage.read_failed". When both an identifier prefix and a non-empty message
-// are present, they are joined with a single dot. If both the prefix and message
+// "storage: read_failed". When both an identifier prefix and a non-empty message
+// are present, they are joined with a colon and space. If both the prefix and message
 // are empty, New returns errors.New("").
 func New(message string, opts ...Option) error {
 	// Start with an empty buffer for prefix.
@@ -54,7 +54,8 @@ func New(message string, opts ...Option) error {
 	// Append the base message with a dot if we already have a prefix.
 	if len(message) > 0 {
 		if len(b) > 0 {
-			b = append(b, '.')
+			b = append(b, ':')
+			b = append(b, ' ')
 		}
 		b = append(b, message...)
 	}
@@ -68,7 +69,7 @@ func New(message string, opts ...Option) error {
 
 // ErrorFactory returns a function that creates errors under the given namespace.
 // It uses the same Namespace/WithNamespace options as key construction and
-// produces identifiers like "ns.message".
+// produces identifiers like "ns: message".
 func ErrorFactory(ns Namespace) func(message string) error {
 	return func(message string) error {
 		return New(message, WithNamespace(ns))

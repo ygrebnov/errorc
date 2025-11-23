@@ -154,13 +154,13 @@ func TestNew_withOptions(t *testing.T) {
 			name:    "namespace and message",
 			message: "read_failed",
 			opts:    []Option{WithNamespace("storage")},
-			want:    "storage.read_failed",
+			want:    "storage: read_failed",
 		},
 		{
 			name:    "namespace, segments via WithSegments reused from keys, and message",
 			message: "read_failed",
 			opts:    []Option{WithNamespace("storage"), WithSegments("user", "id")},
-			want:    "storage.user.id.read_failed",
+			want:    "storage.user.id: read_failed",
 		},
 		{
 			name:    "namespace only, empty message -> namespace only",
@@ -214,7 +214,7 @@ func TestErrorFactory(t *testing.T) {
 		{
 			name: "non-empty message",
 			msg:  "read_failed",
-			want: "storage.read_failed",
+			want: "storage: read_failed",
 		},
 	}
 
@@ -238,7 +238,7 @@ func TestNamespace_NewError(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Namespace.NewError returned nil")
 	}
-	if got, want := err.Error(), "storage.read_failed"; got != want {
+	if got, want := err.Error(), "storage: read_failed"; got != want {
 		t.Fatalf("Namespace.NewError() = %q, want %q", got, want)
 	}
 }
