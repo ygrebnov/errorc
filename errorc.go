@@ -6,10 +6,73 @@ import (
 	"unsafe"
 )
 
-// New creates a new error with the given message.
-// It is a simple wrapper around the standard library's errors.New function.
-func New(m string) error {
-	return errors.New(m)
+// Namespace is a logical namespace for identifiers used by this package.
+// It is used when constructing both namespaced error messages (via New and ErrorFactory) and
+// keys (via NewKey/KeyFactory).
+type Namespace string
+
+// NewError creates a new error with the given message under this namespace.
+func (n Namespace) NewError(message string) error {
+	return New(message, WithNamespace(n))
+}
+
+// Option defines a function that modifies the byte representation of an identifier.
+// It is used when constructing both namespaced errors (New/ErrorFactory) and keys (NewKey/KeyFactory).
+type Option func([]byte) []byte
+
+// WithNamespace sets a namespace prefix for an identifier. The namespace itself
+// is not suffixed with a dot; separators are inserted when segments or the
+// base name are added. For example, namespace "ns" and name "user" become
+// "ns.user" if there are no segments.
+func WithNamespace(ns Namespace) Option {
+	return func(b []byte) []byte {
+		// We store namespace bytes at the front; actual dot separators are
+		// inserted when composing the final message in New or final key in NewKey.
+		if len(ns) == 0 {
+			return b
+		}
+		prefix := make([]byte, 0, len(ns)+len(b))
+		prefix = append(prefix, []byte(ns)...)
+		prefix = append(prefix, b...)
+		return prefix
+	}
+}
+
+// New creates a new error from the given message and options.
+//
+// Options can prepend a namespace or other components to form identifiers like
+// "storage.read_failed". When both an identifier prefix and a non-empty message
+// are present, they are joined with a single dot. If both the prefix and message
+// are empty, New returns errors.New("").
+func New(message string, opts ...Option) error {
+	// Start with an empty buffer for prefix.
+	b := make([]byte, 0, len(message))
+	for _, opt := range opts {
+		b = opt(b)
+	}
+
+	// Append the base message with a dot if we already have a prefix.
+	if len(message) > 0 {
+		if len(b) > 0 {
+			b = append(b, '.')
+		}
+		b = append(b, message...)
+	}
+
+	if len(b) == 0 {
+		return errors.New("")
+	}
+	// b is not mutated after this point; unsafe.String avoids an extra allocation.
+	return errors.New(unsafe.String(&b[0], len(b)))
+}
+
+// ErrorFactory returns a function that creates errors under the given namespace.
+// It uses the same Namespace/WithNamespace options as key construction and
+// produces identifiers like "ns.message".
+func ErrorFactory(ns Namespace) func(message string) error {
+	return func(message string) error {
+		return New(message, WithNamespace(ns))
+	}
 }
 
 // With returns an error that wraps the given error with additional context.

@@ -70,10 +70,10 @@
 // [WithSegments] options. Namespace and segments form a prefix, followed by
 // the base name. Empty segments are skipped. For example:
 //
-//	// ns.org.id.user
-//	userIDKey := NewKey("user", WithNamespace(KeyNamespace("ns")), WithSegments(KeySegment("org"), KeySegment("id")))
+//	// ns.user.id.user
+//	userIDKey := NewKey("user", WithNamespace(Namespace("ns")), WithSegments(KeySegment("user"), KeySegment("id")))
 //	err := With(New("invalid input"), String(userIDKey, "123"))
-//	// invalid input, ns.org.id.user: 123
+//	// invalid input, ns.user.id.user: 123
 //
 // When many keys share the same namespace, [KeyFactory] can be used to
 // pre-bind that namespace and create a constructor for structured keys:
@@ -82,4 +82,17 @@
 //	idKey := userKey("id", "user")
 //	err := With(New("invalid input"), String(idKey, "123"))
 //	// invalid input, ns.user.id: 123
+//
+// Namespaced errors can be created using [New] with [WithNamespace] or via
+// (Namespace).NewError and [ErrorFactory], for example:
+//
+//	storage := Namespace("storage")
+//	err := storage.NewError("read_failed")
+//	// err.Error() == "storage.read_failed"
+//
+// or:
+//
+//	storageErr := ErrorFactory("storage")
+//	err := storageErr("read_failed")
+//	// err.Error() == "storage.read_failed"
 package errorc

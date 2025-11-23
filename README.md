@@ -161,6 +161,29 @@ Given a base error `E` and fields F1..Fn:
 
 The final error string is: `E.Error(), <field1>, <field2>, ...` (comma+space separated) for each non-nil field.
 
+### Namespaced errors
+You can construct simple, namespaced error identifiers using `New` together with
+`WithNamespace`, or via `Namespace.NewError` / `ErrorFactory`:
+
+```go
+// Using New and WithNamespace
+err := errorc.New("read_failed", errorc.WithNamespace("storage"))
+fmt.Println(err) // storage.read_failed
+
+// Using a Namespace method
+storage := errorc.Namespace("storage")
+err2 := storage.NewError("read_failed")
+fmt.Println(err2) // storage.read_failed
+
+// Using ErrorFactory
+storageErr := errorc.ErrorFactory("storage")
+err3 := storageErr("read_failed")
+fmt.Println(err3) // storage.read_failed
+```
+
+These use the same `Namespace`/`WithNamespace` options as `NewKey`/`KeyFactory`
+to form identifiers like `namespace.segment.name`.
+
 ## Installation
 
 Compatible with Go 1.22 or later:

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows Keep a Changelog, but simplified. This project is pre-1.0; minor version bumps (0.x.y) may include breaking changes.
 
+## [0.5.0] - 2025-11-23
+### Added
+- `Namespace` type shared between keys and errors for constructing namespaced identifiers.
+- `Option` and `WithNamespace` generalized to work for both `NewKey`/`KeyFactory` and `New`/`ErrorFactory`.
+- `Namespace.NewError` and `ErrorFactory` helpers for building namespaced errors like `storage.read_failed`.
+
 ## [0.4.0] - 2025-09-29
 ### Added
 - `NewKey`, `Key`, `KeyNamespace`, `KeySegment`, `KeyOption`, `WithNamespace`, and `WithSegments` helpers for structured key construction.
@@ -46,5 +52,6 @@ Notes:
 
 ---
 
+[0.5.0]: https://github.com/ygrebnov/errorc/releases/tag/v0.5.0
 [0.4.0]: https://github.com/ygrebnov/errorc/releases/tag/v0.4.0
 [0.2.0]: https://github.com/ygrebnov/errorc/releases/tag/v0.2.0

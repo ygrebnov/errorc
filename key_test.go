@@ -6,7 +6,7 @@ func TestNewKey(t *testing.T) {
 	tests := []struct {
 		name string
 		base string
-		opts []KeyOption
+		opts []Option
 		want Key
 	}{
 		{
@@ -22,31 +22,31 @@ func TestNewKey(t *testing.T) {
 		{
 			name: "namespace only",
 			base: "field",
-			opts: []KeyOption{WithNamespace("ns")},
+			opts: []Option{WithNamespace("ns")},
 			want: Key("ns.field"),
 		},
 		{
 			name: "segments only",
 			base: "field",
-			opts: []KeyOption{WithSegments("one", "two")},
+			opts: []Option{WithSegments("one", "two")},
 			want: Key("one.two.field"),
 		},
 		{
 			name: "segments only, empty ns, explicitly",
 			base: "field",
-			opts: []KeyOption{WithNamespace(""), WithSegments("one", "two")},
+			opts: []Option{WithNamespace(""), WithSegments("one", "two")},
 			want: Key("one.two.field"),
 		},
 		{
 			name: "empty segment skipped",
 			base: "field",
-			opts: []KeyOption{WithSegments("", "x")},
+			opts: []Option{WithSegments("", "x")},
 			want: Key("x.field"),
 		},
 		{
 			name: "namespace and segments",
 			base: "field",
-			opts: []KeyOption{WithNamespace("ns"), WithSegments("one")},
+			opts: []Option{WithNamespace("ns"), WithSegments("one")},
 			want: Key("ns.one.field"),
 		},
 	}
@@ -65,7 +65,7 @@ func TestNewKey(t *testing.T) {
 func TestKeyFactory(t *testing.T) {
 	tests := []struct {
 		name     string
-		ns       KeyNamespace
+		ns       Namespace
 		base     string
 		segments []KeySegment
 		want     Key

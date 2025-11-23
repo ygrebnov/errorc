@@ -114,3 +114,19 @@ func ExampleKeyFactory_namespaceAndSegments() {
 	fmt.Println(err)
 	// Output: invalid input, ns.user.id: 123, ns.user.email: user@example.com
 }
+
+func ExampleNew_withNamespace() {
+	// Build a namespaced error using New and WithNamespace.
+	err := New("read_failed", WithNamespace("storage"))
+	fmt.Println(err)
+	// Output: storage.read_failed
+}
+
+func ExampleErrorFactory() {
+	// Create a factory for errors in the "storage" namespace.
+	storageErr := ErrorFactory("storage")
+
+	err := storageErr("read_failed")
+	fmt.Println(err)
+	// Output: storage.read_failed
+}

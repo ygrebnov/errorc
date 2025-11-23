@@ -130,3 +130,115 @@ func TestBool(t *testing.T) {
 		t.Fatalf("expected ', flag: false', got %q", empty.Error())
 	}
 }
+
+func TestNew_withOptions(t *testing.T) {
+	tests := []struct {
+		name    string
+		message string
+		opts    []Option
+		want    string
+	}{
+		{
+			name:    "no namespace, non-empty message",
+			message: "simple",
+			opts:    nil,
+			want:    "simple",
+		},
+		{
+			name:    "empty message, no options -> empty error string",
+			message: "",
+			opts:    nil,
+			want:    "",
+		},
+		{
+			name:    "namespace and message",
+			message: "read_failed",
+			opts:    []Option{WithNamespace("storage")},
+			want:    "storage.read_failed",
+		},
+		{
+			name:    "namespace, segments via WithSegments reused from keys, and message",
+			message: "read_failed",
+			opts:    []Option{WithNamespace("storage"), WithSegments("user", "id")},
+			want:    "storage.user.id.read_failed",
+		},
+		{
+			name:    "namespace only, empty message -> namespace only",
+			message: "",
+			opts:    []Option{WithNamespace("storage")},
+			want:    "storage",
+		},
+		{
+			name:    "segments only, empty message -> segments only",
+			message: "",
+			opts:    []Option{WithSegments("user", "id")},
+			want:    "user.id",
+		},
+		{
+			name:    "empty namespace and empty segments are skipped",
+			message: "op",
+			opts:    []Option{WithNamespace(""), WithSegments("", "")},
+			want:    "op",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := New(tt.message, tt.opts...)
+			if got == nil {
+				if tt.want != "" {
+					t.Fatalf("New() = nil, want %q", tt.want)
+				}
+				return
+			}
+			if got.Error() != tt.want {
+				t.Fatalf("New() error = %q, want %q", got.Error(), tt.want)
+			}
+		})
+	}
+}
+
+func TestErrorFactory(t *testing.T) {
+	factory := ErrorFactory("storage")
+
+	tests := []struct {
+		name string
+		msg  string
+		want string
+	}{
+		{
+			name: "empty message -> namespace only",
+			msg:  "",
+			want: "storage",
+		},
+		{
+			name: "non-empty message",
+			msg:  "read_failed",
+			want: "storage.read_failed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := factory(tt.msg)
+			if err == nil {
+				t.Fatalf("factory(%q) = nil, want non-nil", tt.msg)
+			}
+			if got := err.Error(); got != tt.want {
+				t.Fatalf("factory(%q) error = %q, want %q", tt.msg, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNamespace_NewError(t *testing.T) {
+	ns := Namespace("storage")
+
+	err := ns.NewError("read_failed")
+	if err == nil {
+		t.Fatalf("Namespace.NewError returned nil")
+	}
+	if got, want := err.Error(), "storage.read_failed"; got != want {
+		t.Fatalf("Namespace.NewError() = %q, want %q", got, want)
+	}
+}
