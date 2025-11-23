@@ -115,6 +115,28 @@ fmt.Println(err) // invalid input, ns.user.id: 123
 
 Empty segments are skipped by `WithSegments`, so they won't introduce redundant separators.
 
+### KeyFactory (pre-bound namespaces)
+When many keys share the same namespace, `KeyFactory` helps avoid repeating
+`WithNamespace` calls by returning a constructor bound to that namespace.
+
+```go
+// Create a factory for the "ns" namespace.
+userKey := errorc.KeyFactory("ns")
+
+// Build structured keys within this namespace.
+idKey := userKey("id", "user")
+emailKey := userKey("email", "user")
+
+err := errorc.With(
+    errorc.New("invalid input"),
+    errorc.String(idKey, "123"),
+    errorc.String(emailKey, "user@example.com"),
+)
+fmt.Println(err) // invalid input, ns.user.id: 123, ns.user.email: user@example.com
+```
+
+Empty segments passed to the factory are skipped, consistent with `WithSegments`.
+
 ### Int and Bool
 Helpers for common primitive types. These convert the value once when the field is created (no repeated formatting) and follow the same formatting rules (empty key prints only the value):
 

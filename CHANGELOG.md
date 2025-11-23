@@ -9,6 +9,8 @@ The format loosely follows Keep a Changelog, but simplified. This project is pre
 - `NewKey`, `Key`, `KeyNamespace`, `KeySegment`, `KeyOption`, `WithNamespace`, and `WithSegments` helpers for structured key construction.
   - Keys are built in a byte buffer and converted to string with `unsafe.String` for efficiency.
   - `WithSegments` skips empty segments to avoid redundant separators.
+- `KeyFactory` helper for constructing namespaced keys via reusable constructor functions.
+  - Returns a closure that applies `WithNamespace` and `WithSegments` to build `Key` values with a shared namespace prefix.
 
 ### Changed (BREAKING)
 - API naming consolidation (all in this release; prior intermediate 0.3.0 entry squashed):
