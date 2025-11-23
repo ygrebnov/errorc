@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format loosely follows Keep a Changelog, but simplified. This project is pre-1.0; minor version bumps (0.x.y) may include breaking changes.
 
 ## [0.4.0] - 2025-09-29
+### Added
+- `NewKey`, `Key`, `KeyNamespace`, `KeySegment`, `KeyOption`, `WithNamespace`, and `WithSegments` helpers for structured key construction.
+  - Keys are built in a byte buffer and converted to string with `unsafe.String` for efficiency.
+  - `WithSegments` skips empty segments to avoid redundant separators.
+
 ### Changed (BREAKING)
 - API naming consolidation (all in this release; prior intermediate 0.3.0 entry squashed):
   - `Field` -> `String` (generic signature preserved: `func String[K ~string](key K, value string) field`).
