@@ -88,11 +88,11 @@
 //
 //	storage := Namespace("storage")
 //	err := storage.NewError("read_failed")
-//	// err.Error() == "storage.read_failed"
+//	// err.Error() == "storage: read_failed"
 //
 // or:
 //
 //	storageErr := ErrorFactory("storage")
 //	err := storageErr("read_failed")
-//	// err.Error() == "storage.read_failed"
+//	// err.Error() == "storage: read_failed"
 package errorc
