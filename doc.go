@@ -65,4 +65,13 @@
 //
 //	err := With(New("query failed"), Int("retries", 3), Bool("cached", false))
 //	// query failed, retries: 3, cached: false
+//
+// Keys can be composed using [NewKey] with optional [WithNamespace] and
+// [WithSegments] options. Namespace and segments form a prefix, followed by
+// the base name. Empty segments are skipped. For example:
+//
+//	// ns.org.id.user
+//	userIDKey := NewKey("user", WithNamespace(KeyNamespace("ns")), WithSegments(KeySegment("org"), KeySegment("id")))
+//	err := With(New("invalid input"), String(userIDKey, "123"))
+//	// invalid input, ns.org.id.user: 123
 package errorc

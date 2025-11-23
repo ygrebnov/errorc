@@ -86,3 +86,14 @@ func ExampleBool() {
 	fmt.Println(err)
 	// Output: query failed, cached: false
 }
+
+func ExampleNewKey_namespaceAndSegment() {
+	// Compose a structured key using a namespace and a segment, with the
+	// base name coming last.
+	userKey := NewKey("id", WithNamespace("ns"), WithSegments("user"))
+
+	err := With(New("invalid input"), String(userKey, "123"))
+	fmt.Println(err)
+
+	// Output: invalid input, ns.user.id: 123
+}

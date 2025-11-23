@@ -98,6 +98,23 @@ err3 := errorc.With(errorc.New("operation failed"), errorc.Error("cause", nil))
 fmt.Println(err3) // operation failed
 ```
 
+### Structured keys with NewKey
+For more structured, reusable keys you can use `NewKey` with an optional namespace and segments:
+
+```go
+// ns.user.id
+userKey := errorc.NewKey(
+    "id",
+    errorc.WithNamespace("ns"),
+    errorc.WithSegments("user"),
+)
+
+err := errorc.With(errorc.New("invalid input"), errorc.String(userKey, "123"))
+fmt.Println(err) // invalid input, ns.user.id: 123
+```
+
+Empty segments are skipped by `WithSegments`, so they won't introduce redundant separators.
+
 ### Int and Bool
 Helpers for common primitive types. These convert the value once when the field is created (no repeated formatting) and follow the same formatting rules (empty key prints only the value):
 
