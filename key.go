@@ -5,37 +5,12 @@ import "unsafe"
 // Key is a type alias for string used as a key in error context fields.
 type Key string
 
-// KeyNamespace is a type alias for string used to define namespaces for keys.
-type KeyNamespace string
-
 // KeySegment is a type alias for string used to define segments in keys.
 type KeySegment string
 
-// KeyOption defines a function type for configuring key construction.
-// It takes the current key bytes and returns an updated slice.
-type KeyOption func([]byte) []byte
-
-// WithNamespace sets a namespace prefix for the key. The namespace itself
-// is not suffixed with a dot; separators are inserted when segments or the
-// base name are added. For example, namespace "ns" and name "user" become
-// "ns.user" if there are no segments.
-func WithNamespace(ns KeyNamespace) KeyOption {
-	return func(b []byte) []byte {
-		// We store namespace bytes at the front; actual dot separators are
-		// inserted when composing the final key in NewKey.
-		if len(ns) == 0 {
-			return b
-		}
-		prefix := make([]byte, 0, len(ns)+len(b))
-		prefix = append(prefix, []byte(ns)...)
-		prefix = append(prefix, b...)
-		return prefix
-	}
-}
-
 // WithSegments appends segments that will appear between namespace and name,
 // each separated by a dot. Empty segments are skipped.
-func WithSegments(segments ...KeySegment) KeyOption {
+func WithSegments(segments ...KeySegment) Option {
 	return func(b []byte) []byte {
 		for _, seg := range segments {
 			if len(seg) == 0 {
@@ -63,7 +38,7 @@ func WithSegments(segments ...KeySegment) KeyOption {
 // produces:
 //
 //	ns.org.id.user
-func NewKey(name string, opts ...KeyOption) Key {
+func NewKey(name string, opts ...Option) Key {
 	// Start with an empty buffer for namespace and segments.
 	k := make([]byte, 0, len(name))
 	for _, opt := range opts {
@@ -98,7 +73,7 @@ func NewKey(name string, opts ...KeyOption) Key {
 //	userKey := KeyFactory("ns")
 //	idKey := userKey("id", "user")
 //	// idKey == "ns.user.id"
-func KeyFactory(ns KeyNamespace) func(name string, segments ...KeySegment) Key {
+func KeyFactory(ns Namespace) func(name string, segments ...KeySegment) Key {
 	return func(name string, segments ...KeySegment) Key {
 		return NewKey(name, WithNamespace(ns), WithSegments(segments...))
 	}
