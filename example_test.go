@@ -97,3 +97,20 @@ func ExampleNewKey_namespaceAndSegment() {
 
 	// Output: invalid input, ns.user.id: 123
 }
+
+func ExampleKeyFactory_namespaceAndSegments() {
+	// Create a factory that pre-binds the "ns" namespace.
+	userKey := KeyFactory("ns")
+
+	// Build structured keys within this namespace using optional segments.
+	idKey := userKey("id", "user")
+	emailKey := userKey("email", "user")
+
+	err := With(New("invalid input"),
+		String(idKey, "123"),
+		String(emailKey, "user@example.com"),
+	)
+
+	fmt.Println(err)
+	// Output: invalid input, ns.user.id: 123, ns.user.email: user@example.com
+}

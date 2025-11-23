@@ -83,3 +83,23 @@ func NewKey(name string, opts ...KeyOption) Key {
 	}
 	return Key(unsafe.String(&k[0], len(k)))
 }
+
+// KeyFactory returns a function that creates Keys within the specified
+// namespace. The returned function accepts a base name and optional
+// segments, and produces keys of the form:
+//
+//	namespace[.segment1[.segment2[...]]].name
+//
+// Empty segments are skipped, and if both namespace/segments and name are
+// empty, the resulting Key is "".
+//
+// For example:
+//
+//	userKey := KeyFactory("ns")
+//	idKey := userKey("id", "user")
+//	// idKey == "ns.user.id"
+func KeyFactory(ns KeyNamespace) func(name string, segments ...KeySegment) Key {
+	return func(name string, segments ...KeySegment) Key {
+		return NewKey(name, WithNamespace(ns), WithSegments(segments...))
+	}
+}

@@ -74,4 +74,12 @@
 //	userIDKey := NewKey("user", WithNamespace(KeyNamespace("ns")), WithSegments(KeySegment("org"), KeySegment("id")))
 //	err := With(New("invalid input"), String(userIDKey, "123"))
 //	// invalid input, ns.org.id.user: 123
+//
+// When many keys share the same namespace, [KeyFactory] can be used to
+// pre-bind that namespace and create a constructor for structured keys:
+//
+//	userKey := KeyFactory("ns")
+//	idKey := userKey("id", "user")
+//	err := With(New("invalid input"), String(idKey, "123"))
+//	// invalid input, ns.user.id: 123
 package errorc
