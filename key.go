@@ -9,7 +9,8 @@ type Key string
 type KeySegment string
 
 // KeyOption defines a function that modifies the byte representation of an identifier.
-// It is used when constructing keys (NewKey/KeyFactory).
+// It is used when constructing keys (NewKey/KeyFactory) and is not used for errors
+// (see Option).
 type KeyOption func([]byte) []byte
 
 // WithSegments appends segments that will appear before name,

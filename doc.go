@@ -77,10 +77,10 @@
 // When many keys share the same segments, [KeyFactory] can be used to
 // pre-bind those segments and create a constructor for structured keys:
 //
-//	userKeyFactory := KeyFactory("user")
+//	userKeyFactory := KeyFactory(WithSegments("user"))
 //	userIDKey := userKeyFactory("id")
 //	userEmailKey := userKeyFactory("email")
-//	err := With(New("invalid input"), String(userIDKey, "123"), String(userEmailKey, "user@example.com")
+//	err := With(New("invalid input"), String(userIDKey, "123"), String(userEmailKey, "user@example.com"))
 //	// invalid input, user.id: 123, user.email: user@example.com
 //
 // Namespaced errors can be created using [New] with [WithNamespace] or via
@@ -89,6 +89,9 @@
 //	storage := Namespace("storage")
 //	err := storage.NewError("read_failed")
 //	// err.Error() == "storage: read_failed"
+//
+// If the message is empty, both Namespace.NewError("") and ErrorFactory(...)("")
+// produce an error whose Error() is "" (same as New("")).
 //
 // or:
 //
