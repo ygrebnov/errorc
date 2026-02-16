@@ -17,7 +17,8 @@ func (n Namespace) NewError(message string) error {
 }
 
 // Option defines a function that modifies the byte representation of an identifier.
-// It is used when constructing both namespaced errors (New/ErrorFactory) and keys (NewKey/KeyFactory).
+// It is used when constructing namespaced errors (New/ErrorFactory) and is not
+// used for key construction (see KeyOption).
 type Option func([]byte) []byte
 
 // WithNamespace sets a namespace prefix for an identifier. Namespace and identifier are separated by a colon.
@@ -40,9 +41,9 @@ func WithNamespace(ns Namespace) Option {
 // New creates a new error from the given message and options.
 //
 // Options can prepend a namespace or other components to form identifiers like
-// "storage: read_failed". When both an identifier prefix and a non-empty message
-// are present, they are joined with a colon and space. If both the prefix and message
-// are empty, New returns errors.New("").
+// "storage: read_failed". If a prefix is provided, it is expected to include its
+// own separator (for example, WithNamespace adds ": ") and the message is appended
+// directly when non-empty. If both the prefix and message are empty, New returns errors.New("").
 func New(message string, opts ...Option) error {
 	// Start with an empty buffer for prefix.
 	b := make([]byte, 0, len(message))
@@ -50,7 +51,7 @@ func New(message string, opts ...Option) error {
 		b = opt(b)
 	}
 
-	// Append the base message with a dot if we already have a prefix.
+	// Append the base message directly; any separator should be provided by options.
 	if len(message) > 0 {
 		b = append(b, message...)
 	}
@@ -64,7 +65,8 @@ func New(message string, opts ...Option) error {
 
 // ErrorFactory returns a function that creates errors under the given namespace.
 // It uses the same Namespace/WithNamespace options as key construction and
-// produces identifiers like "ns: message".
+// produces identifiers like "ns: message". If message is empty, the returned
+// error's Error() is "" (same as New("")).
 func ErrorFactory(ns Namespace) func(message string) error {
 	return func(message string) error {
 		return New(message, WithNamespace(ns))

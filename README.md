@@ -99,40 +99,39 @@ fmt.Println(err3) // operation failed
 ```
 
 ### Structured keys with NewKey
-For more structured, reusable keys you can use `NewKey` with an optional namespace and segments:
+For more structured, reusable keys you can use `NewKey` with segments:
 
 ```go
-// ns.user.id
+// user.id
 userKey := errorc.NewKey(
     "id",
-    errorc.WithNamespace("ns"),
     errorc.WithSegments("user"),
 )
 
 err := errorc.With(errorc.New("invalid input"), errorc.String(userKey, "123"))
-fmt.Println(err) // invalid input, ns.user.id: 123
+fmt.Println(err) // invalid input, user.id: 123
 ```
 
 Empty segments are skipped by `WithSegments`, so they won't introduce redundant separators.
 
-### KeyFactory (pre-bound namespaces)
-When many keys share the same namespace, `KeyFactory` helps avoid repeating
-`WithNamespace` calls by returning a constructor bound to that namespace.
+### KeyFactory (pre-bound segments)
+When many keys share the same segments, `KeyFactory` helps avoid repeating
+`WithSegments` calls by returning a constructor bound to those segments.
 
 ```go
-// Create a factory for the "ns" namespace.
-userKey := errorc.KeyFactory("ns")
+// Create a factory for the "user" segments.
+userKey := errorc.KeyFactory(errorc.WithSegments("user"))
 
-// Build structured keys within this namespace.
-idKey := userKey("id", "user")
-emailKey := userKey("email", "user")
+// Build structured keys within these segments.
+idKey := userKey("id")
+emailKey := userKey("email")
 
 err := errorc.With(
     errorc.New("invalid input"),
     errorc.String(idKey, "123"),
     errorc.String(emailKey, "user@example.com"),
 )
-fmt.Println(err) // invalid input, ns.user.id: 123, ns.user.email: user@example.com
+fmt.Println(err) // invalid input, user.id: 123, user.email: user@example.com
 ```
 
 Empty segments passed to the factory are skipped, consistent with `WithSegments`.
@@ -181,8 +180,11 @@ err3 := storageErr("read_failed")
 fmt.Println(err3) // storage: read_failed
 ```
 
-These use the same `Namespace`/`WithNamespace` options as `NewKey`/`KeyFactory`
-to form identifiers like `namespace.segment: message` for errors and `namespace.segment.name` for keys.
+If the message is empty, both `Namespace.NewError("")` and `ErrorFactory(...)("")`
+produce an error whose `Error()` is `""` (same as `New("")`).
+
+These use the same `Namespace`/`WithNamespace` options for errors. Keys use
+`KeyOption` with `WithSegments` to form identifiers like `segment1.segment2.name`.
 
 ## Installation
 
