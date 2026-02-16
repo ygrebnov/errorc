@@ -66,22 +66,22 @@
 //	err := With(New("query failed"), Int("retries", 3), Bool("cached", false))
 //	// query failed, retries: 3, cached: false
 //
-// Keys can be composed using [NewKey] with optional [WithNamespace] and
-// [WithSegments] options. Namespace and segments form a prefix, followed by
-// the base name. Empty segments are skipped. For example:
+// Keys can be composed using [NewKey] with optional [WithSegments] options.
+// Segments form a prefix, followed by the base name. Empty segments are skipped. For example:
 //
-//	// ns.user.id.user
-//	userIDKey := NewKey("user", WithNamespace(Namespace("ns")), WithSegments(KeySegment("user"), KeySegment("id")))
-//	err := With(New("invalid input"), String(userIDKey, "123"))
-//	// invalid input, ns.user.id.user: 123
+//	// database.user.id
+//	databaseUserIDKey := NewKey("id", WithSegments("database", "user"))
+//	err := With(New("invalid input"), String(databaseUserID, "123"))
+//	// invalid input, database.user.id: 123
 //
-// When many keys share the same namespace, [KeyFactory] can be used to
-// pre-bind that namespace and create a constructor for structured keys:
+// When many keys share the same segments, [KeyFactory] can be used to
+// pre-bind those segments and create a constructor for structured keys:
 //
-//	userKey := KeyFactory("ns")
-//	idKey := userKey("id", "user")
-//	err := With(New("invalid input"), String(idKey, "123"))
-//	// invalid input, ns.user.id: 123
+//	userKeyFactory := KeyFactory("user")
+//	userIDKey := userKeyFactory("id")
+//	userEmailKey := userKeyFactory("email")
+//	err := With(New("invalid input"), String(userIDKey, "123"), String(userEmailKey, "user@example.com")
+//	// invalid input, user.id: 123, user.email: user@example.com
 //
 // Namespaced errors can be created using [New] with [WithNamespace] or via
 // (Namespace).NewError and [ErrorFactory], for example:
