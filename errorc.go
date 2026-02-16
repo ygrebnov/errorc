@@ -20,10 +20,7 @@ func (n Namespace) NewError(message string) error {
 // It is used when constructing both namespaced errors (New/ErrorFactory) and keys (NewKey/KeyFactory).
 type Option func([]byte) []byte
 
-// WithNamespace sets a namespace prefix for an identifier. The namespace itself
-// is not suffixed with a dot; separators are inserted when segments or the
-// base name are added. For example, namespace "ns" and name "user" become
-// "ns.user" if there are no segments.
+// WithNamespace sets a namespace prefix for an identifier. Namespace and identifier are separated by a colon.
 func WithNamespace(ns Namespace) Option {
 	return func(b []byte) []byte {
 		// We store namespace bytes at the front; actual dot separators are
@@ -31,8 +28,10 @@ func WithNamespace(ns Namespace) Option {
 		if len(ns) == 0 {
 			return b
 		}
-		prefix := make([]byte, 0, len(ns)+len(b))
+		prefix := make([]byte, 0, len(ns)+len(b)+2)
 		prefix = append(prefix, []byte(ns)...)
+		prefix = append(prefix, ':')
+		prefix = append(prefix, ' ')
 		prefix = append(prefix, b...)
 		return prefix
 	}
@@ -53,10 +52,6 @@ func New(message string, opts ...Option) error {
 
 	// Append the base message with a dot if we already have a prefix.
 	if len(message) > 0 {
-		if len(b) > 0 {
-			b = append(b, ':')
-			b = append(b, ' ')
-		}
 		b = append(b, message...)
 	}
 

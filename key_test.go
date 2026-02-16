@@ -6,7 +6,7 @@ func TestNewKey(t *testing.T) {
 	tests := []struct {
 		name string
 		base string
-		opts []Option
+		opts []KeyOption
 		want Key
 	}{
 		{
@@ -20,34 +20,16 @@ func TestNewKey(t *testing.T) {
 			want: Key(""),
 		},
 		{
-			name: "namespace only",
+			name: "two segments, non-empty base",
 			base: "field",
-			opts: []Option{WithNamespace("ns")},
-			want: Key("ns.field"),
-		},
-		{
-			name: "segments only",
-			base: "field",
-			opts: []Option{WithSegments("one", "two")},
-			want: Key("one.two.field"),
-		},
-		{
-			name: "segments only, empty ns, explicitly",
-			base: "field",
-			opts: []Option{WithNamespace(""), WithSegments("one", "two")},
+			opts: []KeyOption{WithSegments("one", "two")},
 			want: Key("one.two.field"),
 		},
 		{
 			name: "empty segment skipped",
 			base: "field",
-			opts: []Option{WithSegments("", "x")},
+			opts: []KeyOption{WithSegments("", "x")},
 			want: Key("x.field"),
-		},
-		{
-			name: "namespace and segments",
-			base: "field",
-			opts: []Option{WithNamespace("ns"), WithSegments("one")},
-			want: Key("ns.one.field"),
 		},
 	}
 
@@ -65,61 +47,41 @@ func TestNewKey(t *testing.T) {
 func TestKeyFactory(t *testing.T) {
 	tests := []struct {
 		name     string
-		ns       Namespace
 		base     string
 		segments []KeySegment
 		want     Key
 	}{
 		{
-			name: "namespace only",
-			ns:   "ns",
-			base: "field",
-			want: Key("ns.field"),
-		},
-		{
-			name:     "namespace with single segment",
-			ns:       "ns",
+			name:     "single segment",
 			base:     "field",
 			segments: []KeySegment{"user"},
-			want:     Key("ns.user.field"),
+			want:     Key("user.field"),
 		},
 		{
-			name:     "namespace with multiple segments",
-			ns:       "ns",
+			name:     "multiple segments",
 			base:     "field",
 			segments: []KeySegment{"user", "id"},
-			want:     Key("ns.user.id.field"),
-		},
-		{
-			name:     "empty namespace, segments only",
-			ns:       "",
-			base:     "field",
-			segments: []KeySegment{"org", "user"},
-			want:     Key("org.user.field"),
+			want:     Key("user.id.field"),
 		},
 		{
 			name:     "empty segments are skipped",
-			ns:       "ns",
 			base:     "field",
 			segments: []KeySegment{"", "user", ""},
-			want:     Key("ns.user.field"),
+			want:     Key("user.field"),
 		},
 		{
-			name: "no namespace, no segments",
-			ns:   "",
+			name: "no segments",
 			base: "field",
 			want: Key("field"),
 		},
 		{
-			name:     "empty base name with namespace and segments",
-			ns:       "ns",
+			name:     "empty base name with segments",
 			base:     "",
-			segments: []KeySegment{"user"},
-			want:     Key("ns.user"),
+			segments: []KeySegment{"user", "id"},
+			want:     Key("user.id"),
 		},
 		{
 			name:     "empty everything yields empty key",
-			ns:       "",
 			base:     "",
 			segments: nil,
 			want:     Key(""),
@@ -129,10 +91,10 @@ func TestKeyFactory(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			factory := KeyFactory(tt.ns)
-			got := factory(tt.base, tt.segments...)
+			factory := KeyFactory(WithSegments(tt.segments...))
+			got := factory(tt.base)
 			if got != tt.want {
-				t.Fatalf("KeyFactory(%q)(%q, %v) = %q, want %q", tt.ns, tt.base, tt.segments, got, tt.want)
+				t.Fatalf("KeyFactory(%v)(%q) = %q, want %q", tt.base, tt.segments, got, tt.want)
 			}
 		})
 	}

@@ -87,32 +87,32 @@ func ExampleBool() {
 	// Output: query failed, cached: false
 }
 
-func ExampleNewKey_namespaceAndSegment() {
-	// Compose a structured key using a namespace and a segment, with the
+func ExampleNewKey() {
+	// Compose a structured key using segments, with the
 	// base name coming last.
-	userKey := NewKey("id", WithNamespace("ns"), WithSegments("user"))
+	userKey := NewKey("id", WithSegments("database", "user"))
 
 	err := With(New("invalid input"), String(userKey, "123"))
 	fmt.Println(err)
 
-	// Output: invalid input, ns.user.id: 123
+	// Output: invalid input, database.user.id: 123
 }
 
-func ExampleKeyFactory_namespaceAndSegments() {
-	// Create a factory that pre-binds the "ns" namespace.
-	userKey := KeyFactory("ns")
+func ExampleKeyFactory() {
+	// Create a user key factory prepending "user" segment (prefix) to keys.
+	userKeyFactory := KeyFactory(WithSegments("user"))
 
-	// Build structured keys within this namespace using optional segments.
-	idKey := userKey("id", "user")
-	emailKey := userKey("email", "user")
+	// Build structured keys using segments.
+	userIDKey := userKeyFactory("id")
+	userEmailKey := userKeyFactory("email")
 
 	err := With(New("invalid input"),
-		String(idKey, "123"),
-		String(emailKey, "user@example.com"),
+		String(userIDKey, "123"),
+		String(userEmailKey, "user@example.com"),
 	)
 
 	fmt.Println(err)
-	// Output: invalid input, ns.user.id: 123, ns.user.email: user@example.com
+	// Output: invalid input, user.id: 123, user.email: user@example.com
 }
 
 func ExampleNew_withNamespace() {
@@ -120,6 +120,13 @@ func ExampleNew_withNamespace() {
 	err := New("read_failed", WithNamespace("storage"))
 	fmt.Println(err)
 	// Output: storage: read_failed
+}
+
+func ExampleNew_withNamespace_twice() {
+	// Build a namespaced error using New and two namespaces applied via WithNamespace.
+	err := New("read_failed", WithNamespace("storage"), WithNamespace("environment"))
+	fmt.Println(err)
+	// Output: environment: storage: read_failed
 }
 
 func ExampleErrorFactory() {

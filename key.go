@@ -8,9 +8,13 @@ type Key string
 // KeySegment is a type alias for string used to define segments in keys.
 type KeySegment string
 
-// WithSegments appends segments that will appear between namespace and name,
+// KeyOption defines a function that modifies the byte representation of an identifier.
+// It is used when constructing keys (NewKey/KeyFactory).
+type KeyOption func([]byte) []byte
+
+// WithSegments appends segments that will appear before name,
 // each separated by a dot. Empty segments are skipped.
-func WithSegments(segments ...KeySegment) Option {
+func WithSegments(segments ...KeySegment) KeyOption {
 	return func(b []byte) []byte {
 		for _, seg := range segments {
 			if len(seg) == 0 {
@@ -25,21 +29,21 @@ func WithSegments(segments ...KeySegment) Option {
 	}
 }
 
-// NewKey constructs a Key from namespace, optional segments, and the base name.
+// NewKey constructs a Key from optional segments, and the base name.
 // The expected final form is:
 //
-//	namespace[.segment1[.segment2[...]]].name
+//	[segment1[.segment2[...]]].name
 //
-// where namespace and segments are provided via options and `name` is the
+// where segments are provided via options and `name` is the
 // base argument. For example:
 //
-//	NewKey("user", WithNamespace("ns"), WithSegments("org", "id"))
+//	NewKey("user", WithSegments("org", "id"))
 //
 // produces:
 //
-//	ns.org.id.user
-func NewKey(name string, opts ...Option) Key {
-	// Start with an empty buffer for namespace and segments.
+//	org.id.user
+func NewKey(name string, opts ...KeyOption) Key {
+	// Start with an empty buffer for segments.
 	k := make([]byte, 0, len(name))
 	for _, opt := range opts {
 		k = opt(k)
@@ -59,22 +63,21 @@ func NewKey(name string, opts ...Option) Key {
 	return Key(unsafe.String(&k[0], len(k)))
 }
 
-// KeyFactory returns a function that creates Keys within the specified
-// namespace. The returned function accepts a base name and optional
-// segments, and produces keys of the form:
+// KeyFactory returns a function that creates Keys with the specified
+// segments. The returned function accepts a base name and produces keys of the form:
 //
-//	namespace[.segment1[.segment2[...]]].name
+//	segment1.segment2....name
 //
-// Empty segments are skipped, and if both namespace/segments and name are
+// Empty segments are skipped, and if both segments and name are
 // empty, the resulting Key is "".
 //
 // For example:
 //
-//	userKey := KeyFactory("ns")
-//	idKey := userKey("id", "user")
-//	// idKey == "ns.user.id"
-func KeyFactory(ns Namespace) func(name string, segments ...KeySegment) Key {
-	return func(name string, segments ...KeySegment) Key {
-		return NewKey(name, WithNamespace(ns), WithSegments(segments...))
+//	databaseUserKeyFactory := KeyFactory(WithSegments("database", "user"))
+//	databaseUserIDKey := databaseUserKeyFactory("id")
+//	// databaseUserIDKey == "database.user.id"
+func KeyFactory(opts ...KeyOption) func(name string) Key {
+	return func(name string) Key {
+		return NewKey(name, opts...)
 	}
 }

@@ -157,27 +157,15 @@ func TestNew_withOptions(t *testing.T) {
 			want:    "storage: read_failed",
 		},
 		{
-			name:    "namespace, segments via WithSegments reused from keys, and message",
-			message: "read_failed",
-			opts:    []Option{WithNamespace("storage"), WithSegments("user", "id")},
-			want:    "storage.user.id: read_failed",
-		},
-		{
 			name:    "namespace only, empty message -> namespace only",
 			message: "",
 			opts:    []Option{WithNamespace("storage")},
-			want:    "storage",
+			want:    "storage: ",
 		},
 		{
-			name:    "segments only, empty message -> segments only",
-			message: "",
-			opts:    []Option{WithSegments("user", "id")},
-			want:    "user.id",
-		},
-		{
-			name:    "empty namespace and empty segments are skipped",
+			name:    "empty namespace is skipped",
 			message: "op",
-			opts:    []Option{WithNamespace(""), WithSegments("", "")},
+			opts:    []Option{WithNamespace("")},
 			want:    "op",
 		},
 	}
@@ -209,7 +197,7 @@ func TestErrorFactory(t *testing.T) {
 		{
 			name: "empty message -> namespace only",
 			msg:  "",
-			want: "storage",
+			want: "storage: ",
 		},
 		{
 			name: "non-empty message",
