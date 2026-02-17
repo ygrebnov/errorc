@@ -71,8 +71,11 @@
 //
 //	// database.user.id
 //	databaseUserIDKey := NewKey("id", WithSegments("database", "user"))
-//	err := With(New("invalid input"), String(databaseUserID, "123"))
+//	err := With(New("invalid input"), String(databaseUserIDKey, "123"))
 //	// invalid input, database.user.id: 123
+//
+// Key helpers in this package are maintained for compatibility. For new code,
+// prefer github.com/ygrebnov/keys and use keys.New / keys.Factory directly.
 //
 // When many keys share the same segments, [KeyFactory] can be used to
 // pre-bind those segments and create a constructor for structured keys:

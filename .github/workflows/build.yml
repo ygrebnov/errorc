@@ -28,4 +28,4 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: coverage
-          path: .tests/coverage.html
+          path: .coverage/coverage.html

@@ -1,32 +1,28 @@
 package errorc
 
-import "unsafe"
+import keys "github.com/ygrebnov/keys"
 
 // Key is a type alias for string used as a key in error context fields.
-type Key string
+// Deprecated: use github.com/ygrebnov/keys.Key directly.
+type Key = keys.Key
 
 // KeySegment is a type alias for string used to define segments in keys.
-type KeySegment string
+// Deprecated: use github.com/ygrebnov/keys.Segment directly.
+type KeySegment = keys.Segment
 
 // KeyOption defines a function that modifies the byte representation of an identifier.
 // It is used when constructing keys (NewKey/KeyFactory) and is not used for errors
 // (see Option).
+// Deprecated: use github.com/ygrebnov/keys.Option directly.
 type KeyOption func([]byte) []byte
 
 // WithSegments appends segments that will appear before name,
 // each separated by a dot. Empty segments are skipped.
+// Deprecated: use github.com/ygrebnov/keys.WithSegments directly.
 func WithSegments(segments ...KeySegment) KeyOption {
+	opt := keys.WithSegments(segments...)
 	return func(b []byte) []byte {
-		for _, seg := range segments {
-			if len(seg) == 0 {
-				continue
-			}
-			if len(b) > 0 {
-				b = append(b, '.')
-			}
-			b = append(b, []byte(seg)...)
-		}
-		return b
+		return opt('.', b)
 	}
 }
 
@@ -43,25 +39,21 @@ func WithSegments(segments ...KeySegment) KeyOption {
 // produces:
 //
 //	org.id.user
+//
+// Deprecated: use github.com/ygrebnov/keys.New with separator '.' directly.
 func NewKey(name string, opts ...KeyOption) Key {
-	// Start with an empty buffer for segments.
-	k := make([]byte, 0, len(name))
+	kopts := make([]keys.Option, 0, len(opts))
 	for _, opt := range opts {
-		k = opt(k)
-	}
-
-	// Append the base name with a dot if we already have a prefix.
-	if len(name) > 0 {
-		if len(k) > 0 {
-			k = append(k, '.')
+		if opt == nil {
+			continue
 		}
-		k = append(k, name...)
+		o := opt
+		kopts = append(kopts, func(_ byte, b []byte) []byte {
+			return o(b)
+		})
 	}
 
-	if len(k) == 0 {
-		return ""
-	}
-	return Key(unsafe.String(&k[0], len(k)))
+	return keys.New(name, '.', kopts...)
 }
 
 // KeyFactory returns a function that creates Keys with the specified
@@ -77,6 +69,8 @@ func NewKey(name string, opts ...KeyOption) Key {
 //	databaseUserKeyFactory := KeyFactory(WithSegments("database", "user"))
 //	databaseUserIDKey := databaseUserKeyFactory("id")
 //	// databaseUserIDKey == "database.user.id"
+//
+// Deprecated: use github.com/ygrebnov/keys.Factory with separator '.' directly.
 func KeyFactory(opts ...KeyOption) func(name string) Key {
 	return func(name string) Key {
 		return NewKey(name, opts...)
