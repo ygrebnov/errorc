@@ -99,7 +99,9 @@ fmt.Println(err3) // operation failed
 ```
 
 ### Structured keys with NewKey
-For more structured, reusable keys you can use `NewKey` with segments:
+For more structured, reusable keys you can use `NewKey` with segments. These helpers
+are kept for compatibility; for new code, prefer `github.com/ygrebnov/keys` and use
+`keys.New` / `keys.Factory` directly:
 
 ```go
 // user.id
@@ -112,11 +114,22 @@ err := errorc.With(errorc.New("invalid input"), errorc.String(userKey, "123"))
 fmt.Println(err) // invalid input, user.id: 123
 ```
 
+Migration snippet:
+
+```go
+// Before (errorc)
+userKey := errorc.NewKey("id", errorc.WithSegments("user"))
+
+// After (keys)
+userKey := keys.New("id", '.', keys.WithSegments("user"))
+```
+
 Empty segments are skipped by `WithSegments`, so they won't introduce redundant separators.
 
 ### KeyFactory (pre-bound segments)
 When many keys share the same segments, `KeyFactory` helps avoid repeating
-`WithSegments` calls by returning a constructor bound to those segments.
+`WithSegments` calls by returning a constructor bound to those segments. These helpers
+are kept for compatibility; for new code, prefer `github.com/ygrebnov/keys`.
 
 ```go
 // Create a factory for the "user" segments.
@@ -204,4 +217,4 @@ Please open an [issue](https://github.com/ygrebnov/errorc/issues) or submit a [p
 
 ## License
 
-Distributed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Distributed under the BSD 3-Clause License. See the [LICENSE](LICENSE) file for details.
