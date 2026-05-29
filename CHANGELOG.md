@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format loosely follows Keep a Changelog, but simplified. This project is pre-1.0; minor version bumps (0.x.y) may include breaking changes.
 
+## [0.6.0] - 2026-05-29
+### Changed (BREAKING)
+- Removed the deprecated in-repo key compatibility layer.
+  - Removed `NewKey`, `KeyFactory`, `WithSegments`, `Key`, `KeySegment`, and `KeyOption` from `errorc`.
+  - Use [`github.com/ygrebnov/keys`](https://github.com/ygrebnov/keys) directly for structured keys.
+  - Existing field helpers such as `String`, `Int`, `Bool`, and `Error` continue to accept `keys.Key` values because they are string-based.
+
+### Migration
+- Before:
+  - `errorc.NewKey("id", errorc.WithSegments("user"))`
+  - `errorc.KeyFactory(errorc.WithSegments("user"))`
+- After:
+  - `keys.New("id", keys.WithSegments("user"))`
+  - `keys.Factory(keys.WithSegments("user"))`
+
 ## [0.5.0] - 2025-11-23
 ### Added
 - `Namespace` type shared between keys and errors for constructing namespaced identifiers.
@@ -53,5 +68,6 @@ Notes:
 ---
 
 [0.5.0]: https://github.com/ygrebnov/errorc/releases/tag/v0.5.0
+[0.6.0]: https://github.com/ygrebnov/errorc/releases/tag/v0.6.0
 [0.4.0]: https://github.com/ygrebnov/errorc/releases/tag/v0.4.0
 [0.2.0]: https://github.com/ygrebnov/errorc/releases/tag/v0.2.0

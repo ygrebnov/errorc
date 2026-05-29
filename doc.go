@@ -66,21 +66,18 @@
 //	err := With(New("query failed"), Int("retries", 3), Bool("cached", false))
 //	// query failed, retries: 3, cached: false
 //
-// Keys can be composed using [NewKey] with optional [WithSegments] options.
-// Segments form a prefix, followed by the base name. Empty segments are skipped. For example:
+// Structured keys are provided by the github.com/ygrebnov/keys package. The generic field
+// helpers in this package accept those keys directly because they have an
+// underlying string type. For example:
 //
-//	// database.user.id
-//	databaseUserIDKey := NewKey("id", WithSegments("database", "user"))
-//	err := With(New("invalid input"), String(databaseUserIDKey, "123"))
-//	// invalid input, database.user.id: 123
+//	userIDKey := keys.New("id", keys.WithSegments("user"))
+//	err := With(New("invalid input"), String(userIDKey, "123"))
+//	// invalid input, user.id: 123
 //
-// Key helpers in this package are maintained for compatibility. For new code,
-// prefer github.com/ygrebnov/keys and use keys.New / keys.Factory directly.
+// When many keys share the same segments, keys.Factory can be used to pre-bind
+// those segments and create a constructor for structured keys:
 //
-// When many keys share the same segments, [KeyFactory] can be used to
-// pre-bind those segments and create a constructor for structured keys:
-//
-//	userKeyFactory := KeyFactory(WithSegments("user"))
+//	userKeyFactory := keys.Factory(keys.WithSegments("user"))
 //	userIDKey := userKeyFactory("id")
 //	userEmailKey := userKeyFactory("email")
 //	err := With(New("invalid input"), String(userIDKey, "123"), String(userEmailKey, "user@example.com"))
@@ -93,8 +90,9 @@
 //	err := storage.NewError("read_failed")
 //	// err.Error() == "storage: read_failed"
 //
-// If the message is empty, both Namespace.NewError("") and ErrorFactory(...)("")
-// produce an error whose Error() is "" (same as New("")).
+// If the message is empty and the namespace is non-empty, both
+// Namespace.NewError("") and ErrorFactory(...)("") produce an error string
+// that contains only the namespace prefix, for example "storage: ".
 //
 // or:
 //
