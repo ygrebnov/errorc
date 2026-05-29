@@ -81,6 +81,14 @@ err := errorc.With(errorc.New("oops"), errorc.String("detail", "something"))
 fmt.Println(err)
 ```
 
+`String`, `Int`, `Bool`, and `Error` also work with [`github.com/ygrebnov/keys.Key`](https://github.com/ygrebnov/keys), since it has an underlying string type:
+
+```go
+userIDKey := keys.New("id", keys.WithSegments("user"))
+err := errorc.With(errorc.New("invalid input"), errorc.String(userIDKey, "123"))
+fmt.Println(err) // invalid input, user.id: 123
+```
+
 ### Error (embedding an underlying cause's message)
 Use `Error` to capture another error's message as a structured field. Nil errors are ignored.
 
@@ -98,56 +106,36 @@ err3 := errorc.With(errorc.New("operation failed"), errorc.Error("cause", nil))
 fmt.Println(err3) // operation failed
 ```
 
-### Structured keys with NewKey
-For more structured, reusable keys you can use `NewKey` with segments. These helpers
-are kept for compatibility; for new code, prefer `github.com/ygrebnov/keys` and use
-`keys.New` / `keys.Factory` directly:
+### Structured keys
+Structured keys are provided by [`github.com/ygrebnov/keys`](https://github.com/ygrebnov/keys).
+Use `keys.New` or `keys.Factory` there, then pass the resulting key to `errorc.String`,
+`errorc.Int`, `errorc.Bool`, or `errorc.Error`.
 
 ```go
-// user.id
-userKey := errorc.NewKey(
-    "id",
-    errorc.WithSegments("user"),
-)
+// Direct construction.
+userIDKey := keys.New("id", keys.WithSegments("user"))
 
-err := errorc.With(errorc.New("invalid input"), errorc.String(userKey, "123"))
-fmt.Println(err) // invalid input, user.id: 123
-```
-
-Migration snippet:
-
-```go
-// Before (errorc)
-userKey := errorc.NewKey("id", errorc.WithSegments("user"))
-
-// After (keys)
-userKey := keys.New("id", '.', keys.WithSegments("user"))
-```
-
-Empty segments are skipped by `WithSegments`, so they won't introduce redundant separators.
-
-### KeyFactory (pre-bound segments)
-When many keys share the same segments, `KeyFactory` helps avoid repeating
-`WithSegments` calls by returning a constructor bound to those segments. These helpers
-are kept for compatibility; for new code, prefer `github.com/ygrebnov/keys`.
-
-```go
-// Create a factory for the "user" segments.
-userKey := errorc.KeyFactory(errorc.WithSegments("user"))
-
-// Build structured keys within these segments.
-idKey := userKey("id")
+// Pre-bound constructor for shared segments.
+userKey := keys.Factory(keys.WithSegments("user"))
 emailKey := userKey("email")
 
 err := errorc.With(
     errorc.New("invalid input"),
-    errorc.String(idKey, "123"),
+    errorc.String(userIDKey, "123"),
     errorc.String(emailKey, "user@example.com"),
 )
 fmt.Println(err) // invalid input, user.id: 123, user.email: user@example.com
 ```
 
-Empty segments passed to the factory are skipped, consistent with `WithSegments`.
+Migration snippet:
+
+```go
+// Before (old errorc key helpers)
+// userKey := errorc.NewKey("id", errorc.WithSegments("user"))
+
+// After (keys)
+userKey := keys.New("id", keys.WithSegments("user"))
+```
 
 ### Int and Bool
 Helpers for common primitive types. These convert the value once when the field is created (no repeated formatting) and follow the same formatting rules (empty key prints only the value):
@@ -193,11 +181,11 @@ err3 := storageErr("read_failed")
 fmt.Println(err3) // storage: read_failed
 ```
 
-If the message is empty, both `Namespace.NewError("")` and `ErrorFactory(...)("")`
-produce an error whose `Error()` is `""` (same as `New("")`).
+If the message is empty and the namespace is non-empty, both `Namespace.NewError("")`
+and `ErrorFactory(...)("")` produce an error string that contains only the
+namespace prefix, for example `"storage: "`.
 
-These use the same `Namespace`/`WithNamespace` options for errors. Keys use
-`KeyOption` with `WithSegments` to form identifiers like `segment1.segment2.name`.
+For structured keys such as `segment1.segment2.name`, use [`github.com/ygrebnov/keys`](https://github.com/ygrebnov/keys).
 
 ## Installation
 

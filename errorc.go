@@ -6,26 +6,28 @@ import (
 	"unsafe"
 )
 
-// Namespace is a logical namespace for identifiers used by this package.
-// It is used when constructing both namespaced error messages (via New and ErrorFactory) and
-// keys (via NewKey/KeyFactory).
+// Namespace is a logical namespace for error identifiers used by this package.
+// It is used when constructing namespaced error messages via New, Namespace.NewError,
+// and ErrorFactory.
 type Namespace string
 
 // NewError creates a new error with the given message under this namespace.
+// If message is empty and the namespace is non-empty, the resulting error string
+// contains only the namespace prefix, for example "storage: ".
 func (n Namespace) NewError(message string) error {
 	return New(message, WithNamespace(n))
 }
 
 // Option defines a function that modifies the byte representation of an identifier.
-// It is used when constructing namespaced errors (New/ErrorFactory) and is not
-// used for key construction (see KeyOption).
+// It is used when constructing namespaced errors (New, Namespace.NewError,
+// and ErrorFactory).
 type Option func([]byte) []byte
 
 // WithNamespace sets a namespace prefix for an identifier. Namespace and identifier are separated by a colon.
 func WithNamespace(ns Namespace) Option {
 	return func(b []byte) []byte {
-		// We store namespace bytes at the front; actual dot separators are
-		// inserted when composing the final message in New or final key in NewKey.
+		// Store the namespace bytes at the front; WithNamespace is responsible for
+		// inserting the ": " separator between namespace and message.
 		if len(ns) == 0 {
 			return b
 		}
@@ -64,9 +66,9 @@ func New(message string, opts ...Option) error {
 }
 
 // ErrorFactory returns a function that creates errors under the given namespace.
-// It uses the same Namespace/WithNamespace options as key construction and
-// produces identifiers like "ns: message". If message is empty, the returned
-// error's Error() is "" (same as New("")).
+// It produces identifiers like "ns: message". If message is empty and the
+// namespace is non-empty, the returned error string contains only the namespace
+// prefix, for example "storage: ".
 func ErrorFactory(ns Namespace) func(message string) error {
 	return func(message string) error {
 		return New(message, WithNamespace(ns))

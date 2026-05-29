@@ -3,16 +3,21 @@ package errorc
 import (
 	"errors"
 	"fmt"
+
+	"github.com/ygrebnov/keys"
 )
 
 func ExampleWith_sentinelError() {
 	// Create a new sentinel error.
 	ErrInvalidInput := New("invalid input")
 
+	// It is useful to keep context fields keys centralized.
+	Field1 := keys.New("field1")
+
 	// Wrap the sentinel error with additional context.
 	err := With(
 		ErrInvalidInput,
-		String("field1", "value1"),
+		String(Field1, "value1"),
 		String("field2", "value2"),
 	)
 
@@ -51,17 +56,6 @@ func ExampleWith_typedError() {
 	// Output: Handled ValidationError: invalid input, field1: value1, field2: value2
 }
 
-func ExampleString_typedKey() {
-	// Demonstrate using a custom named string type as a key.
-	type Key string
-	const UserID Key = "user_id"
-
-	err := With(New("invalid input"), String(UserID, "123"))
-	fmt.Println(err)
-
-	// Output: invalid input, user_id: 123
-}
-
 // ExampleError demonstrates adding an underlying error message as a field.
 func ExampleError() {
 	base := New("operation failed")
@@ -85,34 +79,6 @@ func ExampleBool() {
 	err := With(New("query failed"), Bool("cached", false))
 	fmt.Println(err)
 	// Output: query failed, cached: false
-}
-
-func ExampleNewKey() {
-	// Compose a structured key using segments, with the
-	// base name coming last.
-	userKey := NewKey("id", WithSegments("database", "user"))
-
-	err := With(New("invalid input"), String(userKey, "123"))
-	fmt.Println(err)
-
-	// Output: invalid input, database.user.id: 123
-}
-
-func ExampleKeyFactory() {
-	// Create a user key factory prepending "user" segment (prefix) to keys.
-	userKeyFactory := KeyFactory(WithSegments("user"))
-
-	// Build structured keys using segments.
-	userIDKey := userKeyFactory("id")
-	userEmailKey := userKeyFactory("email")
-
-	err := With(New("invalid input"),
-		String(userIDKey, "123"),
-		String(userEmailKey, "user@example.com"),
-	)
-
-	fmt.Println(err)
-	// Output: invalid input, user.id: 123, user.email: user@example.com
 }
 
 func ExampleNew_withNamespace() {
