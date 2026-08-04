@@ -106,6 +106,10 @@ err3 := errorc.With(errorc.New("operation failed"), errorc.Error("cause", nil))
 fmt.Println(err3) // operation failed
 ```
 
+`Error` deliberately stores only the wrapped error's message as a formatted field. It does not add that error to the Go error chain, so `errors.Is` and `errors.As` will continue to inspect the base error passed to `With`, not errors embedded as fields.
+
+This keeps `errorc` lightweight and avoids treating diagnostic context as semantic error wrapping. If an underlying error should be discoverable through `errors.Is` or `errors.As`, wrap or join it explicitly before passing it to `With`.
+
 ### Structured keys
 Structured keys are provided by [`github.com/ygrebnov/keys`](https://github.com/ygrebnov/keys).
 Use `keys.New` or `keys.Factory` there, then pass the resulting key to `errorc.String`,
