@@ -7,14 +7,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/ygrebnov/errorc)](https://goreportcard.com/report/github.com/ygrebnov/errorc)
 
 ## Usage
-### Compared to `fmt.Errorf`
-The `errorc.With` function behaves like `fmt.Errorf`, but performs significantly faster in benchmarks:
-
-```text
-BenchmarkWith-8         53965288                21.81 ns/op
-BenchmarkFmtErrorf-8     7401583               186.7 ns/op
-```
-
 ### Sentinel errors
 The `With` function allows wrapping a sentinel error with additional context and later identifying this error using `errors.Is`.
 
@@ -166,29 +158,13 @@ Given a base error `E` and fields F1..Fn:
 
 The final error string is: `E.Error(), <field1>, <field2>, ...` (comma+space separated) for each non-nil field.
 
-### Namespaced errors
-You can construct simple, namespaced error identifiers using `New` together with
-`WithNamespace`, or via `Namespace.NewError` / `ErrorFactory`:
+### Component context
+Use a field to identify the component that produced an error:
 
 ```go
-// Using New and WithNamespace
-err := errorc.New("read_failed", errorc.WithNamespace("storage"))
-fmt.Println(err) // storage: read_failed
-
-// Using a Namespace method
-storage := errorc.Namespace("storage")
-err2 := storage.NewError("read_failed")
-fmt.Println(err2) // storage: read_failed
-
-// Using ErrorFactory
-storageErr := errorc.ErrorFactory("storage")
-err3 := storageErr("read_failed")
-fmt.Println(err3) // storage: read_failed
+err := errorc.With(errorc.New("read_failed"), errorc.String("component", "storage"))
+fmt.Println(err) // read_failed, component: storage
 ```
-
-If the message is empty and the namespace is non-empty, both `Namespace.NewError("")`
-and `ErrorFactory(...)("")` produce an error string that contains only the
-namespace prefix, for example `"storage: "`.
 
 For structured keys such as `segment1.segment2.name`, use [`github.com/ygrebnov/keys`](https://github.com/ygrebnov/keys).
 

@@ -81,25 +81,8 @@ func ExampleBool() {
 	// Output: query failed, cached: false
 }
 
-func ExampleNew_withNamespace() {
-	// Build a namespaced error using New and WithNamespace.
-	err := New("read_failed", WithNamespace("storage"))
+func ExampleWith_component() {
+	err := With(New("read_failed"), String("component", "storage"))
 	fmt.Println(err)
-	// Output: storage: read_failed
-}
-
-func ExampleNew_withNamespace_twice() {
-	// Build a namespaced error using New and two namespaces applied via WithNamespace.
-	err := New("read_failed", WithNamespace("storage"), WithNamespace("environment"))
-	fmt.Println(err)
-	// Output: environment: storage: read_failed
-}
-
-func ExampleErrorFactory() {
-	// Create a factory for errors in the "storage" namespace.
-	storageErr := ErrorFactory("storage")
-
-	err := storageErr("read_failed")
-	fmt.Println(err)
-	// Output: storage: read_failed
+	// Output: read_failed, component: storage
 }
