@@ -7,7 +7,7 @@ import (
 
 // FuzzFormatting ensures that arbitrary unicode / empty strings for base error,
 // key, and value never cause a panic and always return a stable string.
-// It also exercises the Int / Bool / Error helpers with random inputs to
+// It also exercises the Int / Int64 / Bool / Error helpers with random inputs to
 // protect the unsafe path in (*errorWithFields).Error.
 func FuzzFormatting(f *testing.F) {
 	// Seed a few representative cases.
@@ -36,6 +36,7 @@ func FuzzFormatting(f *testing.F) {
 		fields := []field{
 			String(key, val),
 			Int("n", int(n)),
+			Int64("n64", n),
 			Bool("flag", flag),
 			Error("cause", maybeErr(val)),
 		}
