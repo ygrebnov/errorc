@@ -5,10 +5,9 @@
 // Package errorc provides an implementation of an error
 // augmenting a standard library's [error] with additional context.
 //
-// The [With] function works similarly to [fmt.Errorf] but is faster.
-//
-//	BenchmarkWith-8         53965288                21.81 ns/op
-//	BenchmarkFmtErrorf-8     7401583               186.7 ns/op
+// The [With] function wraps errors with field context while preserving
+// [errors.Is] and [errors.As] behavior. The package benchmarks compare
+// construction and rendering with [fmt.Errorf].
 //
 // The [With] function allows wrapping a sentinel error with additional context
 // and later identifying this error using [errors.Is].
@@ -83,20 +82,8 @@
 //	err := With(New("invalid input"), String(userIDKey, "123"), String(userEmailKey, "user@example.com"))
 //	// invalid input, user.id: 123, user.email: user@example.com
 //
-// Namespaced errors can be created using [New] with [WithNamespace] or via
-// (Namespace).NewError and [ErrorFactory], for example:
+// A component can be added as a field, for example:
 //
-//	storage := Namespace("storage")
-//	err := storage.NewError("read_failed")
-//	// err.Error() == "storage: read_failed"
-//
-// If the message is empty and the namespace is non-empty, both
-// Namespace.NewError("") and ErrorFactory(...)("") produce an error string
-// that contains only the namespace prefix, for example "storage: ".
-//
-// or:
-//
-//	storageErr := ErrorFactory("storage")
-//	err := storageErr("read_failed")
-//	// err.Error() == "storage: read_failed"
+//	err := With(New("read_failed"), String("component", "storage"))
+//	// err.Error() == "read_failed, component: storage"
 package errorc

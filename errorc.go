@@ -6,73 +6,9 @@ import (
 	"unsafe"
 )
 
-// Namespace is a logical namespace for error identifiers used by this package.
-// It is used when constructing namespaced error messages via New, Namespace.NewError,
-// and ErrorFactory.
-type Namespace string
-
-// NewError creates a new error with the given message under this namespace.
-// If message is empty and the namespace is non-empty, the resulting error string
-// contains only the namespace prefix, for example "storage: ".
-func (n Namespace) NewError(message string) error {
-	return New(message, WithNamespace(n))
-}
-
-// Option defines a function that modifies the byte representation of an identifier.
-// It is used when constructing namespaced errors (New, Namespace.NewError,
-// and ErrorFactory).
-type Option func([]byte) []byte
-
-// WithNamespace sets a namespace prefix for an identifier. Namespace and identifier are separated by a colon.
-func WithNamespace(ns Namespace) Option {
-	return func(b []byte) []byte {
-		// Store the namespace bytes at the front; WithNamespace is responsible for
-		// inserting the ": " separator between namespace and message.
-		if len(ns) == 0 {
-			return b
-		}
-		prefix := make([]byte, 0, len(ns)+len(b)+2)
-		prefix = append(prefix, []byte(ns)...)
-		prefix = append(prefix, ':')
-		prefix = append(prefix, ' ')
-		prefix = append(prefix, b...)
-		return prefix
-	}
-}
-
-// New creates a new error from the given message and options.
-//
-// Options can prepend a namespace or other components to form identifiers like
-// "storage: read_failed". If a prefix is provided, it is expected to include its
-// own separator (for example, WithNamespace adds ": ") and the message is appended
-// directly when non-empty. If both the prefix and message are empty, New returns errors.New("").
-func New(message string, opts ...Option) error {
-	// Start with an empty buffer for prefix.
-	b := make([]byte, 0, len(message))
-	for _, opt := range opts {
-		b = opt(b)
-	}
-
-	// Append the base message directly; any separator should be provided by options.
-	if len(message) > 0 {
-		b = append(b, message...)
-	}
-
-	if len(b) == 0 {
-		return errors.New("")
-	}
-	// b is not mutated after this point; unsafe.String avoids an extra allocation.
-	return errors.New(unsafe.String(&b[0], len(b)))
-}
-
-// ErrorFactory returns a function that creates errors under the given namespace.
-// It produces identifiers like "ns: message". If message is empty and the
-// namespace is non-empty, the returned error string contains only the namespace
-// prefix, for example "storage: ".
-func ErrorFactory(ns Namespace) func(message string) error {
-	return func(message string) error {
-		return New(message, WithNamespace(ns))
-	}
+// New creates a new error with the given message.
+func New(message string) error {
+	return errors.New(message)
 }
 
 // With returns an error that wraps the given error with additional context.

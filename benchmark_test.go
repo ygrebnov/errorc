@@ -6,14 +6,16 @@ import (
 	"testing"
 )
 
+var benchmarkResult string
+
 func BenchmarkWith(b *testing.B) {
-	baseErr := New("benchmark error")
-	field1 := String("key1", "value1")
-	field2 := String("key2", "value2")
+	baseErr := errors.New("benchmark error")
+	val1 := "value1"
+	val2 := "value2"
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = With(baseErr, field1, field2)
+		benchmarkResult = With(baseErr, String("key1", val1), String("key2", val2)).Error()
 	}
 }
 
@@ -24,6 +26,6 @@ func BenchmarkFmtErrorf(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = fmt.Errorf("%w, key1: %s, key2: %s", baseErr, val1, val2)
+		benchmarkResult = fmt.Errorf("%w, key1: %s, key2: %s", baseErr, val1, val2).Error()
 	}
 }
