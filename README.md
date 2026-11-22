@@ -81,7 +81,7 @@ err := errorc.With(errorc.New("oops"), errorc.String("detail", "something"))
 fmt.Println(err)
 ```
 
-`String`, `Int`, `Bool`, and `Error` also work with [`github.com/ygrebnov/keys.Key`](https://github.com/ygrebnov/keys), since it has an underlying string type:
+`String`, `Int`, `Int64`, `Bool`, and `Error` also work with [`github.com/ygrebnov/keys.Key`](https://github.com/ygrebnov/keys), since it has an underlying string type:
 
 ```go
 userIDKey := keys.New("id", keys.WithSegments("user"))
@@ -113,7 +113,7 @@ This keeps `errorc` lightweight and avoids treating diagnostic context as semant
 ### Structured keys
 Structured keys are provided by [`github.com/ygrebnov/keys`](https://github.com/ygrebnov/keys).
 Use `keys.New` or `keys.Factory` there, then pass the resulting key to `errorc.String`,
-`errorc.Int`, `errorc.Bool`, or `errorc.Error`.
+`errorc.Int`, `errorc.Int64`, `errorc.Bool`, or `errorc.Error`.
 
 ```go
 // Direct construction.
@@ -141,16 +141,17 @@ Migration snippet:
 userKey := keys.New("id", keys.WithSegments("user"))
 ```
 
-### Int and Bool
+### Int, Int64, and Bool
 Helpers for common primitive types. These convert the value once when the field is created (no repeated formatting) and follow the same formatting rules (empty key prints only the value):
 
 ```go
 err := errorc.With(
     errorc.New("query failed"),
     errorc.Int("retries", 3),
+    errorc.Int64("request_id", 9223372036854775807),
     errorc.Bool("cached", false),
 )
-fmt.Println(err) // query failed, retries: 3, cached: false
+fmt.Println(err) // query failed, retries: 3, request_id: 9223372036854775807, cached: false
 
 // Empty keys -> just values
 err2 := errorc.With(errorc.New("status"), errorc.Int("", 10), errorc.Bool("", true))

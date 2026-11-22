@@ -157,6 +157,16 @@ func Int[K ~string](key K, value int) field {
 	}
 }
 
+// Int64 creates a field whose value is the decimal representation of an int64.
+// The conversion happens at creation time to avoid repeated work when the closure is invoked.
+func Int64[K ~string](key K, value int64) field {
+	ks := string(key)
+	vs := strconv.FormatInt(value, 10)
+	return func() kv {
+		return kv{key: ks, value: vs}
+	}
+}
+
 // Bool creates a field whose value is the string representation of a bool ("true" / "false").
 // The conversion happens at creation time to avoid repeated work when the closure is invoked.
 func Bool[K ~string](key K, value bool) field {

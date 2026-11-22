@@ -59,9 +59,9 @@
 //	err := With(New("operation failed"), Error("cause", cause))
 //	// operation failed, cause: disk full
 //
-// The [Int] and [Bool] helpers provide zero-allocation conversions for
-// integers and booleans (conversion done once at creation). They follow the same
-// formatting rules as String: empty key prints only the value.
+// The [Int], [Int64], and [Bool] helpers convert integers and booleans once at
+// field creation. They follow String's formatting rules: an empty key prints
+// only the value.
 //
 //	err := With(New("query failed"), Int("retries", 3), Bool("cached", false))
 //	// query failed, retries: 3, cached: false

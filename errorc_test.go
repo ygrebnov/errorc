@@ -2,6 +2,7 @@ package errorc
 
 import (
 	"errors"
+	"math"
 	"testing"
 )
 
@@ -113,6 +114,37 @@ func TestInt(t *testing.T) {
 	empty := With(New(""), Int("", 0))
 	if empty.Error() != ", 0" {
 		t.Fatalf("expected ', 0', got %q", empty.Error())
+	}
+}
+
+func TestInt64(t *testing.T) {
+	tests := []struct {
+		name  string
+		base  string
+		key   string
+		value int64
+		want  string
+	}{
+		{"positive", "base", "count", 42, "base, count: 42"},
+		{"negative with empty key", "base", "", -42, "base, -42"},
+		{"zero with empty base", "", "count", 0, ", count: 0"},
+		{"maximum", "base", "count", math.MaxInt64, "base, count: 9223372036854775807"},
+		{"minimum", "base", "count", math.MinInt64, "base, count: -9223372036854775808"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := With(New(tt.base), Int64(tt.key, tt.value)).Error()
+			if got != tt.want {
+				t.Fatalf("With(New(%q), Int64(%q, %d)).Error() = %q, want %q", tt.base, tt.key, tt.value, got, tt.want)
+			}
+		})
+	}
+
+	type keyType string
+	got := With(New("base"), Int64(keyType("count"), 7)).Error()
+	if want := "base, count: 7"; got != want {
+		t.Fatalf("Int64 with named string key = %q, want %q", got, want)
 	}
 }
 
