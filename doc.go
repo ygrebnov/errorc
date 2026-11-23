@@ -59,7 +59,7 @@
 //	err := With(New("operation failed"), Error("cause", cause))
 //	// operation failed, cause: disk full
 //
-// The [Int], [Int64], and [Bool] helpers retain typed values. They follow
+// The [Int], [Int64], [Bool], and [Duration] helpers retain typed values. They follow
 // String's formatting rules: an empty key prints only the value.
 //
 //	err := With(New("query failed"), Int("retries", 3), Bool("cached", false))

@@ -3,6 +3,7 @@ package errorc
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ygrebnov/keys"
 )
@@ -89,6 +90,12 @@ func ExampleBool() {
 	err := With(New("query failed"), Bool("cached", false))
 	fmt.Println(err)
 	// Output: query failed, cached: false
+}
+
+func ExampleDuration() {
+	err := With(New("query failed"), Duration("elapsed", 1500*time.Millisecond))
+	fmt.Println(err)
+	// Output: query failed, elapsed: 1.5s
 }
 
 func ExampleWith_component() {
