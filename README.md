@@ -1,201 +1,54 @@
-**errorc** is a minimalistic extension to Go's standard `error` type, providing additional structured context. Written by [ygrebnov](https://github.com/ygrebnov).
-
----
+**errorc** adds typed, inspectable context to Go errors. Written by [ygrebnov](https://github.com/ygrebnov).
 
 [![GoDoc](https://pkg.go.dev/badge/github.com/ygrebnov/errorc)](https://pkg.go.dev/github.com/ygrebnov/errorc)
 [![Build Status](https://github.com/ygrebnov/errorc/actions/workflows/build.yml/badge.svg)](https://github.com/ygrebnov/errorc/actions/workflows/build.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ygrebnov/errorc)](https://goreportcard.com/report/github.com/ygrebnov/errorc)
 
+## Why errorc?
+
+Use `fmt.Errorf` when a readable message and `%w` wrapping are enough. With `errorc`, context such as an ID, duration, or component remains a typed field that callers can retrieve without parsing `Error()` text. `WithCause` also pairs a reusable category error with a concrete cause; `errors.Is` and `errors.As` can find both.
+
 ## Usage
-### Sentinel errors
-The `With` function allows wrapping a sentinel error with additional context and later identifying this error using `errors.Is`.
 
 ```go
-// Create a new named error.
-ErrInvalidInput := errorc.New("invalid input")
+var ErrInvalidConfiguration = errorc.New("invalid configuration") // Define once.
 
-// Wrap the named error with additional context.
+cause := errors.New("port must be positive")
 err := errorc.With(
-    ErrInvalidInput,
-    errorc.String("field1", "value1"),
-    errorc.String("field2", "value2"),
+    ErrInvalidConfiguration,
+    errorc.String("component", "server"),
+    errorc.Int("port", -1),
+	errorc.Error("cause", cause),
 )
 
-// Identify the error using errors.Is.
-if errors.Is(err, ErrInvalidInput) {
-    // Handle the invalid input error.
-    fmt.Print("Handled invalid input error: ", err.Error())
-}
+fmt.Println(err) // invalid configuration, cause: port must be positive, component: server, port: -1
+fmt.Println(errors.Is(err, ErrInvalidConfiguration), errors.Is(err, cause)) // true true
+port, ok := errorc.Lookup[int](err, "port")
+fmt.Println(port, ok) // -1 true
+
+// For simple error wrapping, use WithCause:
+err = errorc.WithCause(ErrInvalidConfiguration, cause)
+fmt.Println(err) // invalid configuration, cause: port must be positive
 ```
 
-### Typed errors
-The `With` function allows wrapping a typed error with additional context and later identifying this error using `errors.As`.
+`With(err, fields...)` adds fields to an error. `WithCause(category, cause)` is shorthand for `With(category, Error("cause", cause))`. A nil field or cause is ignored; a nil base error yields nil. An `Error` field adds its original error to the error tree.
 
-```go
-type ValidationError struct { Message string }
-func (e *ValidationError) Error() string { return e.Message }
+## Fields
 
-err := errorc.With(
-    &ValidationError{"invalid input"},
-    errorc.String("field1", "value1"),
-    errorc.String("field2", "value2"),
-)
+| Constructor | Stored value |
+| --- | --- |
+| `String` | `string` |
+| `Int` | `int` |
+| `Int64` | `int64` |
+| `Bool` | `bool` |
+| `Duration` | `time.Duration` |
+| `Error` | `error`, also added as a cause |
 
-// Identify ValidationError using errors.As.
-var ve *ValidationError
-if errors.As(err, &ve) {
-    fmt.Print("Handled ValidationError: ", err.Error())
-}
-```
+`Fields(err)` lists fields across the error tree. `Lookup[T](err, key)` returns the last field with that key if its value is `T`; `ValueAs[T](field)` reads a field directly. `Duration` renders with `time.Duration.String()`. All constructors accept plain strings and named string keys, including [`keys.Key`](https://github.com/ygrebnov/keys).
 
-### Custom key types (generic String)
-`String` is generic: `func String[K ~string](key K, value string)`. This lets you define strongly typed keys without manual casting:
+Custom types can implement `Field` (`Key`, `Kind`, `String`) and a typed `Value() T` method for `Lookup` and `ValueAs`. If they also implement `Unwrap() error`, their cause joins the error tree.
 
-```go
-type Key string
-const (
-    UserID  Key = "user_id"
-    TraceID Key = "trace_id"
-)
-
-err := errorc.With(
-    errorc.New("invalid input"),
-    errorc.String(UserID, "123"),
-    errorc.String(TraceID, "abc-xyz"),
-)
-fmt.Println(err) // invalid input, user_id: 123, trace_id: abc-xyz
-```
-
-You can still pass plain string keys; type inference picks `K = string` automatically:
-
-```go
-err := errorc.With(errorc.New("oops"), errorc.String("detail", "something"))
-fmt.Println(err)
-```
-
-`String`, `Int`, `Int64`, `Bool`, `Duration`, and `Error` also work with [`github.com/ygrebnov/keys.Key`](https://github.com/ygrebnov/keys), since it has an underlying string type:
-
-```go
-userIDKey := keys.New("id", keys.WithSegments("user"))
-err := errorc.With(errorc.New("invalid input"), errorc.String(userIDKey, "123"))
-fmt.Println(err) // invalid input, user.id: 123
-```
-
-### Error fields and causes
-Use `Error` to attach another error as a field and add it to the error tree.
-Its message is captured when the field is created, while the original error
-remains available to `errors.Is`, `errors.As`, and `ValueAs[error]`.
-Nil errors are ignored.
-
-```go
-cause := errors.New("disk full")
-err := errorc.With(errorc.New("operation failed"), errorc.Error("cause", cause))
-fmt.Println(err) // operation failed, cause: disk full
-fmt.Println(errors.Is(err, cause)) // true
-
-// Empty key prints only the inner error's message
-err2 := errorc.With(errorc.New("operation failed"), errorc.Error("", cause))
-fmt.Println(err2) // operation failed, disk full
-
-// Nil cause is skipped
-err3 := errorc.With(errorc.New("operation failed"), errorc.Error("cause", nil))
-fmt.Println(err3) // operation failed
-```
-
-For the common category-and-cause case, `WithCause(category, cause)` is shorthand
-for `With(category, Error("cause", cause))`:
-
-```go
-ErrInvalidConfiguration := errorc.New("invalid configuration")
-err := errorc.WithCause(ErrInvalidConfiguration, errors.New("invalid field"))
-fmt.Println(err) // invalid configuration, cause: invalid field
-```
-
-When an error field is present, `With` exposes the base error first, followed by
-error fields in their original order through `Unwrap() []error`. Without error
-fields, `Unwrap() error` returns the base error as before. Go's `errors.Unwrap`
-returns nil for a multi-error wrapper; use `errors.Is` or `errors.As` to inspect
-its causes.
-
-### Inspecting fields
-`Fields(err)` collects fields across wrapped errors from inner to outer, including
-errors wrapped by `Error` fields. It preserves duplicate keys and returns a new
-slice. `Lookup[T](err, key)` finds the last field with that key and returns its
-value if the type is `T`. `ValueAs[T](field)` checks a field directly.
-
-```go
-err := errorc.With(
-    errorc.New("invalid record"),
-    errorc.String("component", "log"),
-    errorc.Int("field_index", 2),
-)
-
-index, indexOK := errorc.Lookup[int](err, "field_index") // 2, true
-component, componentOK := errorc.ValueAs[string](errorc.Fields(err)[0]) // "log", true
-fmt.Println(index, indexOK, component, componentOK) // 2 true log true
-```
-
-`Field` is an interface with `Key()`, `Kind()`, and `String()` methods. Custom
-fields can implement it and expose a typed `Value() T` method to work with
-`ValueAs[T]` and `Lookup[T]`. A custom field that also implements
-`Unwrap() error` adds its non-nil error to the error tree.
-
-### Structured keys
-Structured keys are provided by [`github.com/ygrebnov/keys`](https://github.com/ygrebnov/keys).
-Use `keys.New` or `keys.Factory` there, then pass the resulting key to `errorc.String`,
-`errorc.Int`, `errorc.Int64`, `errorc.Bool`, `errorc.Duration`, or `errorc.Error`.
-
-```go
-// Direct construction.
-userIDKey := keys.New("id", keys.WithSegments("user"))
-
-// Pre-bound constructor for shared segments.
-userKey := keys.Factory(keys.WithSegments("user"))
-emailKey := userKey("email")
-
-err := errorc.With(
-    errorc.New("invalid input"),
-    errorc.String(userIDKey, "123"),
-    errorc.String(emailKey, "user@example.com"),
-)
-fmt.Println(err) // invalid input, user.id: 123, user.email: user@example.com
-```
-
-### Int, Int64, Bool, and Duration
-Helpers for common value types. They retain typed values and follow the same formatting rules (empty key prints only the value). `Duration` renders using `time.Duration.String()`:
-
-```go
-err := errorc.With(
-    errorc.New("query failed"),
-    errorc.Int("retries", 3),
-    errorc.Int64("request_id", 9223372036854775807),
-    errorc.Bool("cached", false),
-    errorc.Duration("elapsed", 1500*time.Millisecond),
-)
-fmt.Println(err) // query failed, retries: 3, request_id: 9223372036854775807, cached: false, elapsed: 1.5s
-
-// Empty keys -> just values
-err2 := errorc.With(errorc.New("status"), errorc.Int("", 10), errorc.Bool("", true))
-fmt.Println(err2) // status, 10, true
-```
-
-### Field formatting rules
-Given a base error `E` and fields F1..Fn:
-- Empty key & non-empty value -> appended as `value`
-- Non-empty key & any value -> appended as `key: value`
-- Empty key & empty value -> no value text (the comma separator remains)
-
-The final error string is: `E.Error(), <field1>, <field2>, ...` (comma+space separated) for each non-nil field.
-
-### Component context
-Use a field to identify the component that produced an error:
-
-```go
-err := errorc.With(errorc.New("read_failed"), errorc.String("component", "storage"))
-fmt.Println(err) // read_failed, component: storage
-```
-
-For structured keys such as `segment1.segment2.name`, use [`github.com/ygrebnov/keys`](https://github.com/ygrebnov/keys).
+`Error()` renders each field as `key: value`, separated by commas; an empty key renders only the value. Cause fields create a multi-error tree, so use `errors.Is` or `errors.As` to inspect causes.
 
 ## Installation
 
@@ -206,13 +59,13 @@ go get github.com/ygrebnov/errorc
 ```
 
 ## Versioning
-This library is pre-1.0; minor version bumps (e.g. 0.2.0) may include breaking changes. Once it reaches 1.0, semantic versioning will apply more strictly.
+
+This library is pre-1.0; minor version bumps may include breaking changes.
 
 ## Contributing
 
-Contributions are welcome!  
-Please open an [issue](https://github.com/ygrebnov/errorc/issues) or submit a [pull request](https://github.com/ygrebnov/errorc/pulls).
+Contributions are welcome. Open an [issue](https://github.com/ygrebnov/errorc/issues) or submit a [pull request](https://github.com/ygrebnov/errorc/pulls).
 
 ## License
 
-Distributed under the BSD 3-Clause License. See the [LICENSE](LICENSE) file for details.
+Distributed under the BSD 3-Clause License. See [LICENSE](LICENSE).
