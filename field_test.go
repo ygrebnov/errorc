@@ -10,16 +10,6 @@ import (
 	"github.com/ygrebnov/errorc"
 )
 
-type durationField struct {
-	key   string
-	value time.Duration
-}
-
-func (f durationField) Key() string            { return f.key }
-func (f durationField) Kind() errorc.FieldKind { return errorc.FieldKindCustom }
-func (f durationField) String() string         { return f.value.String() }
-func (f durationField) Value() time.Duration   { return f.value }
-
 type wrappedField struct {
 	key   string
 	cause error
@@ -52,8 +42,11 @@ func TestValueAs(t *testing.T) {
 	if got, ok := errorc.ValueAs[error](errorc.Error("cause", cause)); !ok || got != cause {
 		t.Fatalf("error value = %v, %v", got, ok)
 	}
-	if got, ok := errorc.ValueAs[time.Duration](durationField{key: "wait", value: time.Second}); !ok || got != time.Second {
-		t.Fatalf("custom value = %v, %v", got, ok)
+	if got, ok := errorc.ValueAs[time.Duration](errorc.Duration("wait", time.Second)); !ok || got != time.Second {
+		t.Fatalf("duration value = %v, %v", got, ok)
+	}
+	if _, ok := errorc.ValueAs[int64](errorc.Duration("wait", time.Second)); ok {
+		t.Fatal("duration was returned as an int64")
 	}
 	if _, ok := errorc.ValueAs[string](errorc.Int64("offset", 42)); ok {
 		t.Fatal("mismatched value type was accepted")
@@ -63,10 +56,38 @@ func TestValueAs(t *testing.T) {
 	}
 }
 
+func TestDuration(t *testing.T) {
+	tests := []struct {
+		name  string
+		key   string
+		value time.Duration
+		want  string
+	}{
+		{"zero", "elapsed", 0, "base, elapsed: 0s"},
+		{"fractional with empty key", "", 1500 * time.Millisecond, "base, 1.5s"},
+		{"negative", "elapsed", -1500 * time.Millisecond, "base, elapsed: -1.5s"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			field := errorc.Duration(tt.key, tt.value)
+			if field.Kind() != errorc.FieldKindDuration {
+				t.Fatalf("Kind() = %v, want FieldKindDuration", field.Kind())
+			}
+			if got := errorc.With(errorc.New("base"), field).Error(); got != tt.want {
+				t.Fatalf("Error() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+	type keyType string
+	if got, ok := errorc.Lookup[time.Duration](errorc.With(errorc.New("base"), errorc.Duration(keyType("elapsed"), time.Minute)), keyType("elapsed")); !ok || got != time.Minute {
+		t.Fatalf("named-key duration lookup = %v, %v", got, ok)
+	}
+}
+
 func TestFieldsAndLookup(t *testing.T) {
 	base := errorc.New("base")
 	inner := errorc.With(base, errorc.Int("index", 2), errorc.String("component", "storage"))
-	outer := fmt.Errorf("outer: %w", errorc.With(inner, errorc.Int("index", 3), durationField{key: "wait", value: time.Second}))
+	outer := fmt.Errorf("outer: %w", errorc.With(inner, errorc.Int("index", 3), errorc.Duration("wait", time.Second)))
 
 	fields := errorc.Fields(outer)
 	keys := make([]string, 0, len(fields))
@@ -81,7 +102,7 @@ func TestFieldsAndLookup(t *testing.T) {
 	}
 	type keyType string
 	if got, ok := errorc.Lookup[time.Duration](outer, keyType("wait")); !ok || got != time.Second {
-		t.Fatalf("custom lookup = %v, %v", got, ok)
+		t.Fatalf("duration lookup = %v, %v", got, ok)
 	}
 	if _, ok := errorc.Lookup[string](outer, "index"); ok {
 		t.Fatal("lookup accepted mismatched latest field type")

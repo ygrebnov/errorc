@@ -1,6 +1,9 @@
 package errorc
 
-import "strconv"
+import (
+	"strconv"
+	"time"
+)
 
 // FieldKind identifies the value type of a field.
 type FieldKind uint8
@@ -12,6 +15,7 @@ const (
 	FieldKindInt64
 	FieldKindBool
 	FieldKindError
+	FieldKindDuration
 )
 
 // Field is a named value attached to an error. Custom fields may implement
@@ -95,6 +99,12 @@ func Bool[K ~string](key K, value bool) Field {
 	return boolField{key: string(key), value: value}
 }
 
+// Duration creates a field whose value is a time.Duration.
+// Its text is formatted with time.Duration.String.
+func Duration[K ~string](key K, value time.Duration) Field {
+	return durationField{key: string(key), value: value}
+}
+
 // Error creates a field from an error value. If err is nil it returns nil so that
 // it will be ignored by With(). The error's message is captured at field creation time.
 // The original error is retained as the field value and added to With's error tree.
@@ -141,6 +151,16 @@ func (f boolField) Key() string     { return f.key }
 func (f boolField) Kind() FieldKind { return FieldKindBool }
 func (f boolField) String() string  { return strconv.FormatBool(f.value) }
 func (f boolField) Value() bool     { return f.value }
+
+type durationField struct {
+	key   string
+	value time.Duration
+}
+
+func (f durationField) Key() string          { return f.key }
+func (f durationField) Kind() FieldKind      { return FieldKindDuration }
+func (f durationField) String() string       { return f.value.String() }
+func (f durationField) Value() time.Duration { return f.value }
 
 type errorField struct {
 	key   string

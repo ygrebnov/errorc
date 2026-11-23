@@ -73,7 +73,7 @@ err := errorc.With(errorc.New("oops"), errorc.String("detail", "something"))
 fmt.Println(err)
 ```
 
-`String`, `Int`, `Int64`, `Bool`, and `Error` also work with [`github.com/ygrebnov/keys.Key`](https://github.com/ygrebnov/keys), since it has an underlying string type:
+`String`, `Int`, `Int64`, `Bool`, `Duration`, and `Error` also work with [`github.com/ygrebnov/keys.Key`](https://github.com/ygrebnov/keys), since it has an underlying string type:
 
 ```go
 userIDKey := keys.New("id", keys.WithSegments("user"))
@@ -134,7 +134,7 @@ fields can implement it and expose a typed `Value() T` method to work with
 ### Structured keys
 Structured keys are provided by [`github.com/ygrebnov/keys`](https://github.com/ygrebnov/keys).
 Use `keys.New` or `keys.Factory` there, then pass the resulting key to `errorc.String`,
-`errorc.Int`, `errorc.Int64`, `errorc.Bool`, or `errorc.Error`.
+`errorc.Int`, `errorc.Int64`, `errorc.Bool`, `errorc.Duration`, or `errorc.Error`.
 
 ```go
 // Direct construction.
@@ -152,8 +152,8 @@ err := errorc.With(
 fmt.Println(err) // invalid input, user.id: 123, user.email: user@example.com
 ```
 
-### Int, Int64, and Bool
-Helpers for common primitive types. They retain typed values and follow the same formatting rules (empty key prints only the value):
+### Int, Int64, Bool, and Duration
+Helpers for common value types. They retain typed values and follow the same formatting rules (empty key prints only the value). `Duration` renders using `time.Duration.String()`:
 
 ```go
 err := errorc.With(
@@ -161,8 +161,9 @@ err := errorc.With(
     errorc.Int("retries", 3),
     errorc.Int64("request_id", 9223372036854775807),
     errorc.Bool("cached", false),
+    errorc.Duration("elapsed", 1500*time.Millisecond),
 )
-fmt.Println(err) // query failed, retries: 3, request_id: 9223372036854775807, cached: false
+fmt.Println(err) // query failed, retries: 3, request_id: 9223372036854775807, cached: false, elapsed: 1.5s
 
 // Empty keys -> just values
 err2 := errorc.With(errorc.New("status"), errorc.Int("", 10), errorc.Bool("", true))
