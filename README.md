@@ -102,6 +102,15 @@ err3 := errorc.With(errorc.New("operation failed"), errorc.Error("cause", nil))
 fmt.Println(err3) // operation failed
 ```
 
+For the common category-and-cause case, `WithCause(category, cause)` is shorthand
+for `With(category, Error("cause", cause))`:
+
+```go
+ErrInvalidConfiguration := errorc.New("invalid configuration")
+err := errorc.WithCause(ErrInvalidConfiguration, errors.New("invalid field"))
+fmt.Println(err) // invalid configuration, cause: invalid field
+```
+
 When an error field is present, `With` exposes the base error first, followed by
 error fields in their original order through `Unwrap() []error`. Without error
 fields, `Unwrap() error` returns the base error as before. Go's `errors.Unwrap`
