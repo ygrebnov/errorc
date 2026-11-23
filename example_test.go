@@ -56,15 +56,25 @@ func ExampleWith_typedError() {
 	// Output: Handled ValidationError: invalid input, field1: value1, field2: value2
 }
 
-// ExampleError demonstrates adding an underlying error message as a field.
+// ExampleError demonstrates adding an underlying error as a field and cause.
 func ExampleError() {
 	base := New("operation failed")
 	cause := errors.New("disk full")
 
 	err := With(base, Error("cause", cause))
 	fmt.Println(err)
+	fmt.Println(errors.Is(err, cause))
 
 	// Output: operation failed, cause: disk full
+	// true
+}
+
+func ExampleLookup() {
+	err := With(New("invalid record"), String("component", "log"), Int("field_index", 2))
+	index, ok := Lookup[int](err, "field_index")
+	component, _ := ValueAs[string](Fields(err)[0])
+	fmt.Println(index, ok, component)
+	// Output: 2 true log
 }
 
 // ExampleInt demonstrates adding an integer value as a field.

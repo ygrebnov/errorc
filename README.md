@@ -81,13 +81,17 @@ err := errorc.With(errorc.New("invalid input"), errorc.String(userIDKey, "123"))
 fmt.Println(err) // invalid input, user.id: 123
 ```
 
-### Error (embedding an underlying cause's message)
-Use `Error` to capture another error's message as a structured field. Nil errors are ignored.
+### Error fields and causes
+Use `Error` to attach another error as a field and add it to the error tree.
+Its message is captured when the field is created, while the original error
+remains available to `errors.Is`, `errors.As`, and `ValueAs[error]`.
+Nil errors are ignored.
 
 ```go
 cause := errors.New("disk full")
 err := errorc.With(errorc.New("operation failed"), errorc.Error("cause", cause))
 fmt.Println(err) // operation failed, cause: disk full
+fmt.Println(errors.Is(err, cause)) // true
 
 // Empty key prints only the inner error's message
 err2 := errorc.With(errorc.New("operation failed"), errorc.Error("", cause))
@@ -98,9 +102,34 @@ err3 := errorc.With(errorc.New("operation failed"), errorc.Error("cause", nil))
 fmt.Println(err3) // operation failed
 ```
 
-`Error` deliberately stores only the wrapped error's message as a formatted field. It does not add that error to the Go error chain, so `errors.Is` and `errors.As` will continue to inspect the base error passed to `With`, not errors embedded as fields.
+When an error field is present, `With` exposes the base error first, followed by
+error fields in their original order through `Unwrap() []error`. Without error
+fields, `Unwrap() error` returns the base error as before. Go's `errors.Unwrap`
+returns nil for a multi-error wrapper; use `errors.Is` or `errors.As` to inspect
+its causes.
 
-This keeps `errorc` lightweight and avoids treating diagnostic context as semantic error wrapping. If an underlying error should be discoverable through `errors.Is` or `errors.As`, wrap or join it explicitly before passing it to `With`.
+### Inspecting fields
+`Fields(err)` collects fields across wrapped errors from inner to outer, including
+errors wrapped by `Error` fields. It preserves duplicate keys and returns a new
+slice. `Lookup[T](err, key)` finds the last field with that key and returns its
+value if the type is `T`. `ValueAs[T](field)` checks a field directly.
+
+```go
+err := errorc.With(
+    errorc.New("invalid record"),
+    errorc.String("component", "log"),
+    errorc.Int("field_index", 2),
+)
+
+index, indexOK := errorc.Lookup[int](err, "field_index") // 2, true
+component, componentOK := errorc.ValueAs[string](errorc.Fields(err)[0]) // "log", true
+fmt.Println(index, indexOK, component, componentOK) // 2 true log true
+```
+
+`Field` is an interface with `Key()`, `Kind()`, and `String()` methods. Custom
+fields can implement it and expose a typed `Value() T` method to work with
+`ValueAs[T]` and `Lookup[T]`. A custom field that also implements
+`Unwrap() error` adds its non-nil error to the error tree.
 
 ### Structured keys
 Structured keys are provided by [`github.com/ygrebnov/keys`](https://github.com/ygrebnov/keys).
@@ -123,18 +152,8 @@ err := errorc.With(
 fmt.Println(err) // invalid input, user.id: 123, user.email: user@example.com
 ```
 
-Migration snippet:
-
-```go
-// Before (old errorc key helpers)
-// userKey := errorc.NewKey("id", errorc.WithSegments("user"))
-
-// After (keys)
-userKey := keys.New("id", keys.WithSegments("user"))
-```
-
 ### Int, Int64, and Bool
-Helpers for common primitive types. These convert the value once when the field is created (no repeated formatting) and follow the same formatting rules (empty key prints only the value):
+Helpers for common primitive types. They retain typed values and follow the same formatting rules (empty key prints only the value):
 
 ```go
 err := errorc.With(
@@ -154,7 +173,7 @@ fmt.Println(err2) // status, 10, true
 Given a base error `E` and fields F1..Fn:
 - Empty key & non-empty value -> appended as `value`
 - Non-empty key & any value -> appended as `key: value`
-- Empty key & empty value -> omitted (no bytes appended)
+- Empty key & empty value -> no value text (the comma separator remains)
 
 The final error string is: `E.Error(), <field1>, <field2>, ...` (comma+space separated) for each non-nil field.
 
