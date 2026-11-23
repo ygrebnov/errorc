@@ -33,7 +33,7 @@ func FuzzFormatting(f *testing.F) {
 		baseErr := New(base)
 
 		// Build a slice of fields (some may be nil if we intentionally test nil error case).
-		fields := []field{
+		fields := []Field{
 			String(key, val),
 			Int("n", int(n)),
 			Int64("n64", n),

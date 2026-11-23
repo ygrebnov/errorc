@@ -2,7 +2,6 @@ package errorc
 
 import (
 	"errors"
-	"strconv"
 	"unsafe"
 )
 
@@ -14,8 +13,8 @@ func New(message string) error {
 // With returns an error that wraps the given error with additional context.
 // If the provided error is nil, it returns nil.
 // If no non-nil fields are provided, it simply returns the original error.
-// Unwrapping this error will yield the original error.
-func With(err error, fields ...field) error {
+// Error fields also add their errors to the chain, after the original error.
+func With(err error, fields ...Field) error {
 	if err == nil {
 		return nil
 	}
@@ -32,121 +31,63 @@ func With(err error, fields ...field) error {
 
 	e := &errorWithFields{
 		e: err,
-		f: make([]field, 0, n),
+		f: make([]Field, 0, n),
 	}
 
+	var causes []error
 	for _, f := range fields {
 		if f != nil {
 			e.f = append(e.f, f)
+			if wrapped, ok := f.(interface{ Unwrap() error }); ok {
+				if cause := wrapped.Unwrap(); cause != nil {
+					if causes == nil {
+						causes = make([]error, 0, n+1)
+						causes = append(causes, err)
+					}
+					causes = append(causes, cause)
+				}
+			}
 		}
 	}
 
+	if causes != nil {
+		return &errorWithCauses{errorWithFields: e, causes: causes}
+	}
 	return e
 }
 
 type errorWithFields struct {
 	e error
-	f []field
+	f []Field
 }
 
 func (e *errorWithFields) Error() string {
-	// Since With returns nil if err is nil, e.e cannot be nil.
 	b := []byte(e.e.Error())
 	for _, f := range e.f {
 		b = append(b, ',')
 		b = append(b, ' ')
-		sf := f()
-		b = append(b, sf.getBytes()...)
+		if key := f.Key(); key != "" {
+			b = append(b, key...)
+			b = append(b, ':', ' ')
+		}
+		b = append(b, f.String()...)
 	}
-	// At this point, b is non-empty.
 	return unsafe.String(&b[0], len(b))
 }
 
-// Unwrap returns the underlying error.
 func (e *errorWithFields) Unwrap() error {
 	return e.e
 }
 
-type field func() kv
-
-// String creates a new field with the given key and value.
-// The key can be any type whose underlying type is string (constraint ~string),
-// allowing custom named string types to be used without an explicit conversion.
-func String[K ~string](key K, value string) field {
-	// Convert once here so the closure doesn't need to repeatedly convert.
-	ks := string(key)
-	return func() kv {
-		return kv{
-			key:   ks,
-			value: value,
-		}
-	}
+func (e *errorWithFields) localFields() []Field {
+	return e.f
 }
 
-// Int creates a field whose value is the decimal representation of an int.
-// The conversion happens at creation time to avoid repeated work when the closure is invoked.
-func Int[K ~string](key K, value int) field {
-	ks := string(key)
-	vs := strconv.Itoa(value)
-	return func() kv {
-		return kv{key: ks, value: vs}
-	}
+type errorWithCauses struct {
+	*errorWithFields
+	causes []error
 }
 
-// Int64 creates a field whose value is the decimal representation of an int64.
-// The conversion happens at creation time to avoid repeated work when the closure is invoked.
-func Int64[K ~string](key K, value int64) field {
-	ks := string(key)
-	vs := strconv.FormatInt(value, 10)
-	return func() kv {
-		return kv{key: ks, value: vs}
-	}
-}
-
-// Bool creates a field whose value is the string representation of a bool ("true" / "false").
-// The conversion happens at creation time to avoid repeated work when the closure is invoked.
-func Bool[K ~string](key K, value bool) field {
-	ks := string(key)
-	vs := strconv.FormatBool(value)
-	return func() kv {
-		return kv{key: ks, value: vs}
-	}
-}
-
-// Error creates a field from an error value. If err is nil it returns nil so that
-// it will be ignored by With(). The error's message is captured at field creation time.
-// This mirrors String's formatting rules: if key is empty only the value is printed.
-func Error[K ~string](key K, err error) field {
-	if err == nil {
-		return nil
-	}
-	ks := string(key)
-	msg := err.Error() // capture now; avoids calling Error repeatedly if closure evaluated multiple times
-	return func() kv {
-		return kv{
-			key:   ks,
-			value: msg,
-		}
-	}
-}
-
-// kv contains a key-value pair for additional context in an error.
-type kv struct {
-	value, key string
-}
-
-func (s *kv) getBytes() []byte {
-	switch {
-	case s.key == "" && s.value == "":
-		return nil
-	case s.key == "":
-		return []byte(s.value)
-	}
-
-	b := []byte(s.key)
-	b = append(b, ':')
-	b = append(b, ' ')
-	b = append(b, s.value...)
-
-	return b
+func (e *errorWithCauses) Unwrap() []error {
+	return e.causes
 }

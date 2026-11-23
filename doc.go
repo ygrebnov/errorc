@@ -51,19 +51,25 @@
 //
 //	invalid input, user_id: 123
 //
-// The [Error] helper turns an error into a field. A nil error is ignored.
-// If the provided key is empty only the wrapped error's message is appended.
+// The [Error] helper turns an error into a field and adds it to the error tree.
+// A nil error is ignored. If the key is empty, only the error's message is
+// appended to the rendered text.
 //
 //	cause := errors.New("disk full")
 //	err := With(New("operation failed"), Error("cause", cause))
 //	// operation failed, cause: disk full
 //
-// The [Int], [Int64], and [Bool] helpers convert integers and booleans once at
-// field creation. They follow String's formatting rules: an empty key prints
-// only the value.
+// The [Int], [Int64], and [Bool] helpers retain typed values. They follow
+// String's formatting rules: an empty key prints only the value.
 //
 //	err := With(New("query failed"), Int("retries", 3), Bool("cached", false))
 //	// query failed, retries: 3, cached: false
+//
+// Fields can be inspected without parsing Error() text. For example:
+//
+//	index, ok := Lookup[int](err, "retries")
+//	_ = index
+//	_ = ok
 //
 // Structured keys are provided by the github.com/ygrebnov/keys package. The generic field
 // helpers in this package accept those keys directly because they have an
