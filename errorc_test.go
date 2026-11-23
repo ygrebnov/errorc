@@ -102,6 +102,32 @@ func TestError(t *testing.T) {
 	}
 }
 
+func TestWithCause(t *testing.T) {
+	category := New("invalid configuration")
+	cause := &typedError{m: "invalid field"}
+	err := WithCause(category, cause)
+
+	if got, want := err.Error(), "invalid configuration, cause: invalid field"; got != want {
+		t.Fatalf("WithCause().Error() = %q, want %q", got, want)
+	}
+	if !errors.Is(err, category) || !errors.Is(err, cause) {
+		t.Fatal("WithCause did not retain both errors")
+	}
+	var typed *typedError
+	if !errors.As(err, &typed) || typed != cause {
+		t.Fatalf("errors.As() = %v, want original cause", typed)
+	}
+	if got, ok := Lookup[error](err, "cause"); !ok || got != cause {
+		t.Fatalf("Lookup[error](cause) = %v, %v", got, ok)
+	}
+	if got := WithCause(category, nil); got != category {
+		t.Fatalf("WithCause(category, nil) = %v, want category", got)
+	}
+	if got := WithCause(nil, cause); got != nil {
+		t.Fatalf("WithCause(nil, cause) = %v, want nil", got)
+	}
+}
+
 func TestInt(t *testing.T) {
 	err := With(New("base"), Int("count", 5))
 	if err.Error() != "base, count: 5" {

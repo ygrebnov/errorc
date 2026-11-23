@@ -70,6 +70,16 @@ func ExampleError() {
 	// true
 }
 
+func ExampleWithCause() {
+	category := New("invalid configuration")
+	cause := errors.New("invalid field")
+	err := WithCause(category, cause)
+	fmt.Println(err)
+	fmt.Println(errors.Is(err, category), errors.Is(err, cause))
+	// Output: invalid configuration, cause: invalid field
+	// true true
+}
+
 func ExampleLookup() {
 	err := With(New("invalid record"), String("component", "log"), Int("field_index", 2))
 	index, ok := Lookup[int](err, "field_index")

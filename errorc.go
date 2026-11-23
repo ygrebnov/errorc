@@ -56,6 +56,13 @@ func With(err error, fields ...Field) error {
 	return e
 }
 
+// WithCause attaches cause to category as an error field named "cause".
+// Both errors are available through errors.Is and errors.As. If category is
+// nil, WithCause returns nil; if cause is nil, it returns category unchanged.
+func WithCause(category, cause error) error {
+	return With(category, Error("cause", cause))
+}
+
 type errorWithFields struct {
 	e error
 	f []Field
